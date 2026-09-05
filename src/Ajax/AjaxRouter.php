@@ -34,6 +34,7 @@ final class AjaxRouter
             'my_ai_agent_save_api_key'        => [ApiKeyController::class, 'save'],
             'my_ai_agent_delete_api_key'      => [ApiKeyController::class, 'delete'],
             'my_ai_agent_toggle_api_key'      => [ApiKeyController::class, 'toggle'],
+            'my_ai_agent_execute'             => [AjaxController::class, 'execute'],
         ];
     }
 

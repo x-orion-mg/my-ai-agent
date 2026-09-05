@@ -8,6 +8,7 @@ namespace MyAIAgent\Core;
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\AI\AIService;
+use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
 use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\Execution\ExecutionManager;
@@ -156,7 +157,10 @@ final class Plugin
             ApiKeyController::class,
             static fn(Container $c): ApiKeyController => new ApiKeyController($c->get(ApiKeyRepository::class))
         );
-
+        $this->container->singleton(
+            AjaxController::class,
+            static fn(Container $c): AjaxController => new AjaxController()
+        );
 
         //admin
         $this->container->singleton(

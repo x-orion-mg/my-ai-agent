@@ -544,6 +544,54 @@
         });
     }
 
+    /* ---------------------------------------------------------------------
+ * AI Agents
+ * ------------------------------------------------------------------- */
+    function initAgents() {
+
+        var $form = $('.aips-agent-form');
+        if (!$form.length) { return; }
+        $form.on('submit', function (e) {
+            e.preventDefault();
+
+            const $submitButton = $form.find('[type="submit"]');
+
+            if ($submitButton.prop('disabled')) {
+                return;
+            }
+
+            $form.addClass('is-loading');
+            $submitButton.prop('disabled', true);
+
+            const formData = new FormData(this);
+
+            const input = {};
+
+            formData.forEach(function (value, key) {
+                input[key] = value;
+            });
+
+
+            post('my_ai_agent_execute', input)
+                .done(function (res) {
+                    console.log('AJAX response:', res);
+                    if (res && res.success) {
+                        $form.removeClass('is-loading');
+                        $submitButton.prop('disabled', false);
+                    }
+                    else {
+                        window.alert(res.data.message || 'Erreur');
+                    }
+                })
+                .fail(function () {
+                    console.log('AJAX error:', res);
+                    $form.removeClass('is-loading');
+                    $submitButton.prop('disabled', false);
+                    window.alert('Une erreur est survenue.');
+                });
+        });
+    }
+
     $(function () {
         initMediaPickers();
         initTabsAndSource();
@@ -551,5 +599,6 @@
         initImport();
         initPrompts();
         initKeys();
+        initAgents();
     });
 })(jQuery);

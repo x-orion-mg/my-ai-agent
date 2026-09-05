@@ -2,12 +2,14 @@
 /**
  * History view.
  *
- * @var array<int, \AIProductStudio\History\HistoryEntry> $entries
+ * @var array<int, HistoryEntry> $entries
  * @var int                                               $page
  * @var int                                               $perPage
  * @var int                                               $total
  * @var int                                               $pages
  */
+
+use MyAIAgent\History\HistoryEntry;
 
 if (! defined('ABSPATH')) {
     exit;

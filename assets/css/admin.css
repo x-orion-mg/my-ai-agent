@@ -225,3 +225,202 @@
         transform: rotate(360deg);
     }
 }
+
+/* ==========================================================================
+   AI Agent Forms
+   ========================================================================== */
+
+.aips-agent-page {
+    max-width: 1100px;
+}
+
+.aips-agent-card {
+    max-width: 1000px;
+    margin-top: 20px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.aips-agent-card__header {
+    padding: 24px 28px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.aips-agent-card__header h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    line-height: 1.4;
+}
+
+.aips-agent-card__header p {
+    margin: 0;
+    color: #646970;
+    font-size: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Form
+   -------------------------------------------------------------------------- */
+
+.aips-agent-form {
+    padding: 28px;
+}
+
+.aips-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.aips-form-field {
+    min-width: 0;
+}
+
+.aips-form-field--full {
+    grid-column: 1 / -1;
+}
+
+.aips-form-field label {
+    display: block;
+    margin-bottom: 7px;
+    color: #1d2327;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.aips-required {
+    color: #d63638;
+    margin-left: 2px;
+}
+
+.aips-input,
+.aips-select,
+.aips-textarea {
+    width: 100%;
+    max-width: none;
+    min-height: 40px;
+    padding: 7px 11px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    background: #fff;
+    color: #2c3338;
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease;
+}
+
+.aips-input:focus,
+.aips-select:focus,
+.aips-textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.aips-input::placeholder,
+.aips-textarea::placeholder {
+    color: #8c8f94;
+}
+
+.aips-select {
+    cursor: pointer;
+}
+
+.aips-form-help {
+    margin: 6px 0 0;
+    color: #646970;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.aips-agent-form__footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 24px;
+    border-top: 1px solid #dcdcde;
+}
+
+.aips-agent-form__footer .button {
+    min-height: 40px;
+    padding: 4px 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Loading
+   -------------------------------------------------------------------------- */
+
+.aips-agent-form.is-loading {
+    pointer-events: none;
+}
+
+.aips-agent-form.is-loading .aips-agent-form__spinner {
+    display: inline-block;
+}
+
+.aips-agent-form__spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #dcdcde;
+    border-top-color: #2271b1;
+    border-radius: 50%;
+    animation: aips-agent-spin 0.7s linear infinite;
+}
+
+@keyframes aips-agent-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Result
+   -------------------------------------------------------------------------- */
+
+.aips-agent-result {
+    margin-top: 24px;
+}
+
+.aips-agent-result:empty {
+    display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media screen and (max-width: 782px) {
+    .aips-agent-card {
+        margin-right: 10px;
+    }
+
+    .aips-agent-form {
+        padding: 20px;
+    }
+
+    .aips-form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .aips-form-field--full {
+        grid-column: auto;
+    }
+
+    .aips-agent-form__footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
