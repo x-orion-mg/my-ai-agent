@@ -583,8 +583,8 @@
                         window.alert(res.data.message || 'Erreur');
                     }
                 })
-                .fail(function () {
-                    console.log('AJAX error:', res);
+                .fail(function (xhr) {
+                    console.log('AJAX error:', xhr);
                     $form.removeClass('is-loading');
                     $submitButton.prop('disabled', false);
                     window.alert('Une erreur est survenue.');

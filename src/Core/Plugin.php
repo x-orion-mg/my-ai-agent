@@ -7,6 +7,7 @@ namespace MyAIAgent\Core;
 
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
+use MyAIAgent\Agent\Agents\Blog\BlogAgent;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
@@ -159,7 +160,11 @@ final class Plugin
         );
         $this->container->singleton(
             AjaxController::class,
-            static fn(Container $c): AjaxController => new AjaxController()
+            static fn(Container $c): AjaxController => new AjaxController($c->get(ExecutionManager::class))
+        );
+        $this->container->singleton(
+            BlogAgent::class,
+            static fn (): BlogAgent => new BlogAgent()
         );
 
         //admin
@@ -176,7 +181,12 @@ final class Plugin
 
     private function registerAgents(): void
     {
+        /** @var AgentManager $agentManager */
+        $agentManager = $this->container->get(AgentManager::class);
 
+        $agentManager->register(
+            $this->container->get(BlogAgent::class)
+        );
     }
 
     private function testExecution(): void
