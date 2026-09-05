@@ -6,10 +6,10 @@ namespace MyAIAgent\Agent\Agents\Blog;
 
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
+use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
-use MyAIAgent\Repository\PromptRepository;
 
 final class BlogAgent implements AgentInterface
 {
@@ -17,6 +17,7 @@ final class BlogAgent implements AgentInterface
     public function __construct(
         private readonly ValidateInputStep $validateInputStep,
         private readonly BuildPromptStep $buildPromptStep,
+        private readonly AskAiStep $askAiStep,
     ) {
     }
     public function id(): string
@@ -65,7 +66,8 @@ final class BlogAgent implements AgentInterface
     {
         return [
             $this->validateInputStep,
-            $this->buildPromptStep
+            $this->buildPromptStep,
+            $this->askAiStep,
         ];
     }
 

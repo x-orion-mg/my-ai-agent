@@ -4,66 +4,123 @@ declare(strict_types=1);
 
 namespace MyAIAgent\AI;
 
+use MyAIAgent\API\ApiKeyRotator;
+use MyAIAgent\Provider\ProviderFactory;
 use MyAILib\MyAI;
 use MyAILib\Response\AIResponse;
+use Throwable;
 
 final class AIService
 {
-    /**
-     * Create an AI client.
-     *
-     * @param array<string, mixed> $config
-     */
-    public function create(array $config): MyAI
-    {
-        return MyAI::create($config);
+    public function __construct(
+        private readonly ProviderFactory $providerFactory,
+        private readonly ApiKeyRotator $keyRotator,
+    ) {
     }
 
     /**
-     * Create an AI client using a session.
-     *
-     * @param array<string, mixed> $config
-     */
-    public function session(
-        string $sessionId,
-        array $config
-    ): MyAI {
-        return $this->create($config)
-            ->session($sessionId);
-    }
-
-    /**
-     * Send a prompt to the AI.
-     *
-     * @param array<string, mixed> $config
+     * @param array<string, mixed> $options
+     * @throws Throwable
      */
     public function ask(
+        string $providerSlug,
         string $prompt,
-        array $config
+        array $options = []
     ): AIResult {
-        $response = $this->create($config)->ask($prompt);
+        $provider = $this->providerFactory->make(
+            $providerSlug
+        );
 
-        return $this->mapResponse($response);
+        if (! $provider->requiresApiKey()) {
+            return $this->askWithoutApiKey(
+                $providerSlug,
+                $prompt,
+                $options
+            );
+        }
+
+        $keys = $this->keyRotator->candidates(
+            $providerSlug
+        );
+
+        $lastException = null;
+
+        foreach ($keys as $key) {
+            try {
+                $config = [
+                    'provider' => $providerSlug,
+                    'api_key' => $key->apiKey,
+                    'model' => $key->model,
+                ];
+
+                $ai = MyAI::create($config);
+
+                if (isset($options['session_id'])) {
+                    $ai->session(
+                        (string) $options['session_id']
+                    );
+                }
+
+                if (isset($options['system_prompt'])) {
+                    $ai->setSystemPrompt(
+                        (string) $options['system_prompt']
+                    );
+                }
+
+                $response = $ai->ask($prompt);
+
+                $this->keyRotator->reportSuccess($key);
+
+                return $this->mapResponse($response);
+            } catch (Throwable $exception) {
+                $lastException = $exception;
+
+                $this->keyRotator->reportFailure($key);
+            }
+        }
+
+        throw $lastException
+            ?? new \RuntimeException(
+                sprintf(
+                    'Toutes les clés API du fournisseur "%s" ont échoué.',
+                    $providerSlug
+                )
+            );
     }
 
     /**
-     * Send a prompt using an AI session.
-     *
-     * @param array<string, mixed> $config
+     * @param array<string, mixed> $options
      */
-    public function askInSession(
-        string $sessionId,
-        string $systemPrompt,
+    private function askWithoutApiKey(
+        string $providerSlug,
         string $prompt,
-        array $config
+        array $options
     ): AIResult {
-        $ai = $this->create($config)
-            ->session($sessionId)
-            ->setSystemPrompt($systemPrompt);
+        $config = [
+            'provider' => $providerSlug,
+        ];
 
-        $response = $ai->ask($prompt);
+        if (isset($options['model'])) {
+            $config['model'] = $options['model'];
+        }
 
-        return $this->mapResponse($response);
+        $ai = MyAI::create($config);
+
+        if (isset($options['session_id'])) {
+            $ai->session(
+                (string) $options['session_id']
+            );
+        }
+
+        if (isset($options['system_prompt'])) {
+            $ai->setSystemPrompt(
+                (string) $options['system_prompt']
+            );
+        }
+
+        return $this->mapResponse(
+            $ai->ask($prompt)
+        );
     }
 
     /**

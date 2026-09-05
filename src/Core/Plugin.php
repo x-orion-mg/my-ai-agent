@@ -8,12 +8,14 @@ namespace MyAIAgent\Core;
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
+use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
 use MyAIAgent\API\ApiKeyController;
+use MyAIAgent\API\ApiKeyRotator;
 use MyAIAgent\Execution\ExecutionManager;
 use MyAIAgent\Logger\Logger;
 use MyAIAgent\Prompt\PromptController;
@@ -166,6 +168,22 @@ final class Plugin
         );
 
         $this->container->singleton(
+            ApiKeyRotator::class,
+            static fn (Container $c): ApiKeyRotator => new ApiKeyRotator(
+                $c->get(ApiKeyRepository::class),
+                $c->get(Settings::class)
+            )
+        );
+        $this->container->singleton(
+            AIService::class,
+            static fn (Container $c): AIService => new AIService(
+                $c->get(ProviderFactory::class),
+                $c->get(ApiKeyRotator::class)
+            )
+        );
+
+
+        $this->container->singleton(
             ValidateInputStep::class,
             static fn (Container $c): ValidateInputStep => new ValidateInputStep()
         );
@@ -174,10 +192,16 @@ final class Plugin
             static fn (Container $c): BuildPromptStep => new BuildPromptStep($c->get(PromptRepository::class))
         );
         $this->container->singleton(
+            AskAiStep::class,
+            static fn (Container $c): AskAiStep => new AskAiStep()
+        );
+
+        $this->container->singleton(
             BlogAgent::class,
             static fn (Container $c): BlogAgent => new BlogAgent(
                 $c->get(ValidateInputStep::class),
                 $c->get(BuildPromptStep::class),
+                $c->get(AskAiStep::class),
             )
         );
 
