@@ -2,9 +2,11 @@
 /**
  * API keys view (AJAX-driven CRUD).
  *
- * @var array<int, \AIProductStudio\API\ApiKey> $keys
+ * @var array<int, ApiKey> $keys
  * @var array<string, string>                   $providers
  */
+
+use MyAIAgent\API\ApiKey;
 
 if (! defined('ABSPATH')) {
     exit;

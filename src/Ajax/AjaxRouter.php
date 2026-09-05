@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MyAIAgent\Ajax;
 
-use MyAIAgent\Ajax\ApiKeyController;
-use MyAIAgent\Ajax\PromptController;
 use MyAIAgent\Core\Container;
 
 /**

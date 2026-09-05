@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MyAiAgent\Ajax;
+namespace MyAIAgent\Ajax;
 
-use MyAiAgent\Repository\ApiKeyRepository;
+use MyAIAgent\Repository\ApiKeyRepository;
 
 /**
  * CRUD AJAX endpoints for AI provider API keys.

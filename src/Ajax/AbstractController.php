@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MyAiAgent\Ajax;
+namespace MyAIAgent\Ajax;
 
 /**
  * Base class for AJAX controllers: centralises nonce verification, capability

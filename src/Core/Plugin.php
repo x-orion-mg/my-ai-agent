@@ -8,6 +8,8 @@ namespace MyAIAgent\Core;
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Agent\AgentManager;
+use MyAIAgent\Ajax\AjaxRouter;
+use MyAIAgent\Ajax\PromptController;
 use MyAIAgent\Execution\ExecutionManager;
 use MyAIAgent\Logger\Logger;
 use MyAIAgent\Provider\ProviderFactory;
@@ -58,6 +60,10 @@ final class Plugin
             $assets = $this->container->get(Assets::class);
             $assets->register();
         }
+        // AJAX endpoints (available in admin context).
+        /** @var AjaxRouter $router */
+        $router = $this->container->get(AjaxRouter::class);
+        $router->register();
     }
 
     public function maybeWooCommerceNotice(): void
@@ -135,6 +141,15 @@ final class Plugin
                 $c->get(Logger::class),
                 $c->get(Settings::class)
             )
+        );
+
+        $this->container->singleton(
+            AjaxRouter::class,
+            static fn (Container $c): AjaxRouter => new AjaxRouter($c)
+        );
+        $this->container->singleton(
+            PromptController::class,
+            static fn(Container $c): PromptController => new PromptController($c->get(PromptRepository::class))
         );
 
 

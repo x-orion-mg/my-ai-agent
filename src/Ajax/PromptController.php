@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MyAiAgent\Ajax;
+namespace MyAIAgent\Ajax;
 
-use MyAiAgent\Repository\PromptRepository;
+use MyAIAgent\Repository\PromptRepository;
 
 /**
  * CRUD AJAX endpoints for prompts.

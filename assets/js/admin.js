@@ -1,11 +1,11 @@
-/* global AIPS, jQuery, wp */
+/* global MY_AI_AGENT, jQuery, wp */
 (function ($) {
     'use strict';
 
-    var i18n = (AIPS && AIPS.i18n) || {};
+    var i18n = (MY_AI_AGENT && MY_AI_AGENT.i18n) || {};
 
     function post(action, data) {
-        return $.post(AIPS.ajaxUrl, $.extend({ action: action, nonce: AIPS.nonce }, data));
+        return $.post(MY_AI_AGENT.ajaxUrl, $.extend({ action: action, nonce: MY_AI_AGENT.nonce }, data));
     }
 
     /* ---------------------------------------------------------------------
@@ -370,16 +370,25 @@
         $(document).on('click', '.aips-delete-prompt', function () {
             if (!window.confirm(i18n.confirmDelete)) { return; }
             var id = $(this).data('id');
-            post('aips_delete_prompt', { id: id }).done(function () { window.location.reload(); });
+            post('my_ai_agent_delete_prompt', { id: id }).done(function () { window.location.reload(); });
         });
 
         $(document).on('click', '.aips-toggle-prompt', function () {
             var id = $(this).data('id');
-            post('aips_toggle_prompt', { id: id }).done(function () { window.location.reload(); });
+            post('my_ai_agent_toggle_prompt', { id: id }).done(function () { window.location.reload(); });
         });
 
+        let isSubmit = false;
         $form.on('submit', function (e) {
             e.preventDefault();
+            // Empêche un deuxième submit pendant la requête
+            if (isSubmit) {
+                return;
+            }
+            isSubmit = true;
+            const $submitButton = $form.find('[type="submit"]');
+            // Désactive le bouton
+            $submitButton.prop('disabled', true)
             var data = {
                 id: $('#aips-prompt-id').val(),
                 name: $('#aips-prompt-name-input').val(),
@@ -387,10 +396,26 @@
                 content: $('#aips-prompt-content-input').val(),
                 is_active: $('#aips-prompt-active').is(':checked') ? 1 : 0
             };
-            post('aips_save_prompt', data).done(function (res) {
-                if (res && res.success) { window.location.reload(); }
-                else { window.alert(res.data.message || 'Erreur'); }
-            });
+
+            post('my_ai_agent_save_prompt', data)
+                .done(function (res) {
+                    if (res && res.success) {
+                        window.location.reload();
+                    } else {
+                        window.alert(res?.data?.message || 'Erreur');
+
+                        // On autorise à nouveau le submit
+                        isSubmit = false;
+                        $submitButton.prop('disabled', false);
+                    }
+                })
+                .fail(function () {
+                    // En cas d'erreur réseau
+                    isSubmit = false;
+                    $submitButton.prop('disabled', false);
+
+                    window.alert('Une erreur est survenue.');
+                });
         });
     }
 
