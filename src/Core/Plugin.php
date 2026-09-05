@@ -10,6 +10,7 @@ use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
 use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
@@ -195,6 +196,10 @@ final class Plugin
             AskAiStep::class,
             static fn (Container $c): AskAiStep => new AskAiStep()
         );
+        $this->container->singleton(
+            ProcessAiResponseStep::class,
+            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep()
+        );
 
         $this->container->singleton(
             BlogAgent::class,
@@ -202,6 +207,7 @@ final class Plugin
                 $c->get(ValidateInputStep::class),
                 $c->get(BuildPromptStep::class),
                 $c->get(AskAiStep::class),
+                $c->get(ProcessAiResponseStep::class),
             )
         );
 

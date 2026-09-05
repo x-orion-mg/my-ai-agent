@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
 use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 
@@ -18,6 +19,7 @@ final class BlogAgent implements AgentInterface
         private readonly ValidateInputStep $validateInputStep,
         private readonly BuildPromptStep $buildPromptStep,
         private readonly AskAiStep $askAiStep,
+        private readonly ProcessAiResponseStep $processAiResponseStep,
     ) {
     }
     public function id(): string
@@ -68,6 +70,7 @@ final class BlogAgent implements AgentInterface
             $this->validateInputStep,
             $this->buildPromptStep,
             $this->askAiStep,
+            $this->processAiResponseStep,
         ];
     }
 
