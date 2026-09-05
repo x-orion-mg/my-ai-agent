@@ -16,6 +16,8 @@ interface AgentInterface
     public function formSchema(): array;
 
     /**
+     * Return the ordered list of steps.
+     *
      * @return array<int, AgentStepInterface>
      */
     public function steps(): array;

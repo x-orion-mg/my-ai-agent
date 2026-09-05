@@ -20,6 +20,7 @@ use MyAIAgent\Ajax\AjaxRouter;
 use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\API\ApiKeyRotator;
 use MyAIAgent\Execution\ExecutionManager;
+use MyAIAgent\Execution\StepExecutionResult;
 use MyAIAgent\Logger\Logger;
 use MyAIAgent\Prompt\PromptController;
 use MyAIAgent\Provider\ProviderFactory;
@@ -186,7 +187,10 @@ final class Plugin
             )
         );
 
-
+        $this->container->singleton(
+            StepExecutionResult::class,
+            static fn (): StepExecutionResult => new StepExecutionResult()
+        );
         $this->container->singleton(
             ValidateInputStep::class,
             static fn (Container $c): ValidateInputStep => new ValidateInputStep()

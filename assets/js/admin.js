@@ -547,7 +547,7 @@
     /* ---------------------------------------------------------------------
  * AI Agents
  * ------------------------------------------------------------------- */
-    function initAgents() {
+    function initAgents2() {
 
         var $form = $('.aips-agent-form');
         if (!$form.length) { return; }
@@ -572,7 +572,7 @@
             });
 
 
-            post('my_ai_agent_execute', input)
+            post('my_ai_agent_create_execution', input)
                 .done(function (res) {
                     console.log('AJAX response:', res);
                     if (res && res.success) {
@@ -591,6 +591,949 @@
                 });
         });
     }
+
+    function initAgents() {
+
+        var $form = $('.aips-agent-form');
+
+        if (!$form.length) {
+            return;
+        }
+
+        var $result = $form.find('.aips-agent-result');
+
+        /**
+         * Escape HTML.
+         */
+        function escapeHtml(value) {
+
+            if (value === null || value === undefined) {
+                return '';
+            }
+
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /**
+         * Try to pretty print an object.
+         */
+        function formatValue(value) {
+
+            if (value === null || value === undefined) {
+                return '';
+            }
+
+            if (typeof value === 'object') {
+                return escapeHtml(
+                    JSON.stringify(value, null, 2)
+                );
+            }
+
+            return escapeHtml(value);
+        }
+
+        /**
+         * Reset execution UI.
+         */
+        function resetResult() {
+
+            $result
+                .removeClass(
+                    'is-running is-completed is-failed is-waiting'
+                )
+                .html('');
+        }
+
+        /**
+         * Render the step list.
+         */
+        function renderSteps(steps, currentIndex) {
+
+            if (!Array.isArray(steps)) {
+                return;
+            }
+
+            var html = '';
+
+            html += '<div class="aips-execution">';
+
+            html += '<div class="aips-execution-header">';
+            html += '<h3>Progression</h3>';
+            html += '</div>';
+
+            html += '<div class="aips-steps">';
+
+            steps.forEach(function (step, index) {
+
+                var state = 'pending';
+
+                if (index < currentIndex) {
+                    state = 'completed';
+                }
+                else if (index === currentIndex) {
+                    state = 'running';
+                }
+
+                html += '<div class="aips-step aips-step--' + state + '"';
+                html += ' data-step-index="' + index + '">';
+
+                html += '<div class="aips-step-indicator">';
+
+                if (state === 'completed') {
+                    html += '<span class="aips-step-icon">✓</span>';
+                }
+                else if (state === 'running') {
+                    html += '<span class="aips-step-icon">';
+                    html += '<span class="aips-spinner"></span>';
+                    html += '</span>';
+                }
+                else {
+                    html += '<span class="aips-step-number">';
+                    html += (index + 1);
+                    html += '</span>';
+                }
+
+                html += '</div>';
+
+                html += '<div class="aips-step-content">';
+
+                html += '<div class="aips-step-label">';
+                html += escapeHtml(step.label || step.id);
+                html += '</div>';
+
+                html += '<div class="aips-step-status">';
+
+                if (state === 'completed') {
+                    html += 'Terminé';
+                }
+                else if (state === 'running') {
+                    html += 'En cours…';
+                }
+                else {
+                    html += 'En attente';
+                }
+
+                html += '</div>';
+
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+
+            $result.html(html);
+        }
+
+        /**
+         * Update the current step in the step list.
+         */
+        function updateStepState(stepIndex, status) {
+
+            var $steps = $result.find('.aips-step');
+
+            $steps.each(function (index) {
+
+                var $step = $(this);
+
+                $step.removeClass(
+                    'aips-step--pending ' +
+                    'aips-step--running ' +
+                    'aips-step--completed ' +
+                    'aips-step--failed ' +
+                    'aips-step--waiting'
+                );
+
+                if (index < stepIndex) {
+
+                    $step.addClass(
+                        'aips-step--completed'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('Terminé');
+
+                    $step.find('.aips-step-icon')
+                        .remove();
+
+                    $step.find('.aips-step-indicator')
+                        .html(
+                            '<span class="aips-step-icon">✓</span>'
+                        );
+
+                    return;
+                }
+
+                if (index > stepIndex) {
+
+                    $step.addClass(
+                        'aips-step--pending'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('En attente');
+
+                    return;
+                }
+
+                if (status === 'completed') {
+
+                    $step.addClass(
+                        'aips-step--completed'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('Terminé');
+
+                    $step.find('.aips-step-indicator')
+                        .html(
+                            '<span class="aips-step-icon">✓</span>'
+                        );
+
+                }
+                else if (status === 'failed') {
+
+                    $step.addClass(
+                        'aips-step--failed'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('Erreur');
+
+                    $step.find('.aips-step-indicator')
+                        .html(
+                            '<span class="aips-step-icon">!</span>'
+                        );
+
+                }
+                else if (status === 'waiting') {
+
+                    $step.addClass(
+                        'aips-step--waiting'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('Validation requise');
+
+                    $step.find('.aips-step-indicator')
+                        .html(
+                            '<span class="aips-step-icon">?</span>'
+                        );
+
+                }
+                else {
+
+                    $step.addClass(
+                        'aips-step--running'
+                    );
+
+                    $step.find('.aips-step-status')
+                        .text('En cours…');
+
+                    $step.find('.aips-step-indicator')
+                        .html(
+                            '<span class="aips-step-icon">' +
+                            '<span class="aips-spinner"></span>' +
+                            '</span>'
+                        );
+                }
+            });
+        }
+
+        /**
+         * Render the result of one step.
+         */
+        function renderStepResult(step, data) {
+
+            if (!step) {
+                return;
+            }
+
+            var html = '';
+
+            html += '<div class="aips-step-result">';
+            html += '<div class="aips-step-result-header">';
+
+            html += '<span class="aips-step-result-number">';
+            html += 'Étape ' + (Number(step.index) + 1);
+            html += '</span>';
+
+            html += '<h4>';
+            html += escapeHtml(step.label || step.id);
+            html += '</h4>';
+
+            html += '</div>';
+
+            if (data && Object.keys(data).length) {
+
+                html += '<div class="aips-step-result-body">';
+
+                Object.keys(data).forEach(function (key) {
+
+                    var value = data[key];
+
+                    /*
+                     * Pour le BuildPromptStep, on veut afficher
+                     * clairement le prompt généré.
+                     */
+                    if (
+                        key === 'prompt' ||
+                        key === 'generated_prompt'
+                    ) {
+
+                        html += '<div class="aips-result-field">';
+                        html += '<div class="aips-result-label">';
+                        html += escapeHtml(key);
+                        html += '</div>';
+
+                        html += '<pre class="aips-result-code">';
+                        html += formatValue(value);
+                        html += '</pre>';
+
+                        html += '</div>';
+
+                        return;
+                    }
+
+                    /*
+                     * Les réponses AI peuvent être longues.
+                     */
+                    if (
+                        key === 'ai_response' ||
+                        key === 'content'
+                    ) {
+
+                        html += '<div class="aips-result-field">';
+                        html += '<div class="aips-result-label">';
+                        html += escapeHtml(key);
+                        html += '</div>';
+
+                        html += '<div class="aips-result-text">';
+                        html += formatValue(value);
+                        html += '</div>';
+
+                        html += '</div>';
+
+                        return;
+                    }
+
+                    html += '<div class="aips-result-field">';
+                    html += '<div class="aips-result-label">';
+                    html += escapeHtml(key);
+                    html += '</div>';
+
+                    html += '<div class="aips-result-value">';
+                    html += formatValue(value);
+                    html += '</div>';
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            $result.find('.aips-step-results').append(html);
+        }
+
+        /**
+         * Render human validation.
+         */
+        function renderHumanValidation(execution) {
+
+            var html = '';
+
+            html += '<div class="aips-human-validation">';
+
+            html += '<div class="aips-human-validation-icon">';
+            html += '✓';
+            html += '</div>';
+
+            html += '<div class="aips-human-validation-content">';
+
+            html += '<h3>';
+            html += 'Validation requise';
+            html += '</h3>';
+
+            html += '<p>';
+            html += 'Le traitement est en attente de votre validation.';
+            html += '</p>';
+
+            html += '<div class="aips-human-validation-actions">';
+
+            html += '<button type="button" ';
+            html += 'class="button button-primary aips-validate-execution" ';
+            html += 'data-execution-id="' +
+                escapeHtml(execution.execution_id) +
+                '">';
+            html += 'Valider et continuer';
+            html += '</button>';
+
+            html += '<button type="button" ';
+            html += 'class="button aips-reject-execution" ';
+            html += 'data-execution-id="' +
+                escapeHtml(execution.execution_id) +
+                '">';
+            html += 'Refuser';
+            html += '</button>';
+
+            html += '</div>';
+
+            html += '</div>';
+            html += '</div>';
+
+            $result.append(html);
+        }
+
+        /**
+         * Render final result.
+         */
+        function renderCompleted(execution) {
+
+            $result
+                .removeClass('is-running is-waiting is-failed')
+                .addClass('is-completed');
+
+            var html = '';
+
+            html += '<div class="aips-execution-final">';
+            html += '<div class="aips-execution-final-icon">✓</div>';
+
+            html += '<div>';
+            html += '<h3>Article généré avec succès</h3>';
+            html += '<p>';
+            html += 'Toutes les étapes ont été exécutées.';
+            html += '</p>';
+            html += '</div>';
+
+            html += '</div>';
+
+            /*
+             * On affiche les données finales si elles existent.
+             */
+            if (
+                execution.data &&
+                Object.keys(execution.data).length
+            ) {
+
+                html += '<div class="aips-final-data">';
+                html += '<h4>Résultat</h4>';
+
+                Object.keys(execution.data).forEach(function (key) {
+
+                    var value = execution.data[key];
+
+                    html += '<div class="aips-result-field">';
+                    html += '<div class="aips-result-label">';
+                    html += escapeHtml(key);
+                    html += '</div>';
+
+                    html += '<div class="aips-result-value">';
+                    html += formatValue(value);
+                    html += '</div>';
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            $result.append(html);
+        }
+
+        /**
+         * Render execution error.
+         */
+        function renderError(message) {
+
+            $result
+                .removeClass(
+                    'is-running is-waiting is-completed'
+                )
+                .addClass('is-failed');
+
+            var html = '';
+
+            html += '<div class="aips-execution-error">';
+
+            html += '<div class="aips-execution-error-icon">';
+            html += '!';
+            html += '</div>';
+
+            html += '<div>';
+            html += '<h3>Une erreur est survenue</h3>';
+            html += '<p>';
+            html += escapeHtml(
+                message || 'Une erreur inconnue est survenue.'
+            );
+            html += '</p>';
+            html += '</div>';
+
+            html += '</div>';
+
+            $result.append(html);
+        }
+
+        /**
+         * Run exactly one step.
+         */
+        function runStep(executionId) {
+
+            return post(
+                'my_ai_agent_run_execution',
+                {
+                    execution_id: executionId
+                }
+            );
+        }
+
+        /**
+         * Process the response of one step.
+         */
+        function processStepResponse(res, executionId) {
+
+            if (
+                !res ||
+                !res.success ||
+                !res.data
+            ) {
+
+                renderError(
+                    res &&
+                    res.data &&
+                    res.data.message
+                        ? res.data.message
+                        : 'Réponse AJAX invalide.'
+                );
+
+                return;
+            }
+
+            var data = res.data;
+
+            /*
+             * Compatibilité avec plusieurs structures possibles.
+             */
+            var step = data.step || null;
+
+            var status = data.status || 'running';
+
+            /*
+             * Si le backend renvoie directement l'étape courante.
+             */
+            if (step) {
+
+                var stepIndex = Number(
+                    step.index !== undefined
+                        ? step.index
+                        : data.step_index || 0
+                );
+
+                updateStepState(
+                    stepIndex,
+                    step.status || status
+                );
+
+                renderStepResult(
+                    step,
+                    step.result || step.data || {}
+                );
+            }
+
+            /*
+             * WAITING HUMAN
+             */
+            if (
+                status === 'waiting_human' ||
+                status === 'waiting'
+            ) {
+
+                $result
+                    .removeClass(
+                        'is-running is-completed is-failed'
+                    )
+                    .addClass('is-waiting');
+
+                renderHumanValidation({
+                    execution_id: executionId
+                });
+
+                return;
+            }
+
+            /*
+             * FAILED
+             */
+            if (status === 'failed') {
+
+                renderError(
+                    data.error ||
+                    data.message ||
+                    'Le step a échoué.'
+                );
+
+                return;
+            }
+
+            /*
+             * COMPLETED
+             */
+            if (status === 'completed') {
+
+                renderCompleted({
+                    execution_id: executionId,
+                    data: data.data || {}
+                });
+
+                return;
+            }
+
+            /*
+             * RUNNING
+             *
+             * On lance automatiquement le step suivant.
+             */
+            if (status === 'running') {
+
+                $result.addClass('is-running');
+
+                window.setTimeout(function () {
+
+                    runStep(executionId)
+                        .done(function (nextResponse) {
+
+                            processStepResponse(
+                                nextResponse,
+                                executionId
+                            );
+
+                        })
+                        .fail(function (xhr) {
+
+                            var message =
+                                'Une erreur est survenue pendant l’exécution.';
+
+                            if (
+                                xhr.responseJSON &&
+                                xhr.responseJSON.data &&
+                                xhr.responseJSON.data.message
+                            ) {
+                                message =
+                                    xhr.responseJSON.data.message;
+                            }
+
+                            renderError(message);
+                        });
+
+                }, 150);
+
+                return;
+            }
+        }
+
+        /**
+         * Start execution.
+         */
+        function startExecution(input, $submitButton) {
+
+            resetResult();
+
+            $result
+                .addClass('is-running');
+
+            /*
+             * Première requête :
+             *
+             * création de l'exécution + récupération
+             * de la définition des steps.
+             */
+            post(
+                'my_ai_agent_create_execution',
+                input
+            )
+                .done(function (res) {
+
+                    console.log(
+                        'Execution created:',
+                        res
+                    );
+
+                    if (
+                        !res ||
+                        !res.success ||
+                        !res.data
+                    ) {
+
+                        renderError(
+                            res &&
+                            res.data &&
+                            res.data.message
+                                ? res.data.message
+                                : 'Impossible de démarrer l’exécution.'
+                        );
+
+                        $submitButton
+                            .prop('disabled', false);
+
+                        return;
+                    }
+
+                    var data = res.data;
+
+                    var executionId =
+                        data.execution_id;
+
+                    if (!executionId) {
+
+                        renderError(
+                            'Identifiant d’exécution manquant.'
+                        );
+
+                        $submitButton
+                            .prop('disabled', false);
+
+                        return;
+                    }
+
+                    /*
+                     * Afficher les steps AVANT de commencer.
+                     */
+                    renderSteps(
+                        data.steps || [],
+                        0
+                    );
+
+                    /*
+                     * Conteneur des résultats individuels.
+                     */
+                    $result.append(
+                        '<div class="aips-step-results"></div>'
+                    );
+
+                    /*
+                     * L'exécution est créée.
+                     * Maintenant on lance le premier step.
+                     */
+                    runStep(executionId)
+                        .done(function (runResponse) {
+
+                            processStepResponse(
+                                runResponse,
+                                executionId
+                            );
+
+                        })
+                        .fail(function (xhr) {
+
+                            var message =
+                                'Impossible de lancer le premier step.';
+
+                            if (
+                                xhr.responseJSON &&
+                                xhr.responseJSON.data &&
+                                xhr.responseJSON.data.message
+                            ) {
+                                message =
+                                    xhr.responseJSON.data.message;
+                            }
+
+                            renderError(message);
+                        })
+                        .always(function () {
+
+                            $submitButton
+                                .prop('disabled', false);
+                        });
+                })
+                .fail(function (xhr) {
+
+                    console.log(
+                        'AJAX error:',
+                        xhr
+                    );
+
+                    var message =
+                        'Une erreur est survenue.';
+
+                    if (
+                        xhr.responseJSON &&
+                        xhr.responseJSON.data &&
+                        xhr.responseJSON.data.message
+                    ) {
+                        message =
+                            xhr.responseJSON.data.message;
+                    }
+
+                    renderError(message);
+
+                    $submitButton
+                        .prop('disabled', false);
+                });
+        }
+
+        /**
+         * Submit form.
+         */
+        $form.on('submit', function (e) {
+
+            e.preventDefault();
+
+            var $submitButton =
+                $form.find('[type="submit"]');
+
+            if ($submitButton.prop('disabled')) {
+                return;
+            }
+
+            $form.addClass('is-loading');
+
+            $submitButton.prop(
+                'disabled',
+                true
+            );
+
+            var formData =
+                new FormData(this);
+
+            var input = {};
+
+            formData.forEach(function (value, key) {
+                input[key] = value;
+            });
+
+            startExecution(
+                input,
+                $submitButton
+            );
+        });
+
+        /**
+         * Human validation.
+         *
+         * Pour l'instant on utilise resume().
+         */
+        $result.on(
+            'click',
+            '.aips-validate-execution',
+            function () {
+
+                var $button = $(this);
+
+                var executionId =
+                    $button.data('execution-id');
+
+                if (!executionId) {
+                    return;
+                }
+
+                $button.prop(
+                    'disabled',
+                    true
+                );
+
+                post(
+                    'my_ai_agent_resume_execution',
+                    {
+                        execution_id: executionId
+                    }
+                )
+                    .done(function (res) {
+
+                        if (
+                            !res ||
+                            !res.success
+                        ) {
+
+                            renderError(
+                                res &&
+                                res.data &&
+                                res.data.message
+                                    ? res.data.message
+                                    : 'Impossible de reprendre l’exécution.'
+                            );
+
+                            return;
+                        }
+
+                        /*
+                         * On retire le bloc de validation.
+                         */
+                        $result
+                            .find('.aips-human-validation')
+                            .remove();
+
+                        $result
+                            .removeClass('is-waiting')
+                            .addClass('is-running');
+
+                        /*
+                         * On reprend avec le step suivant.
+                         */
+                        runStep(executionId)
+                            .done(function (runResponse) {
+
+                                processStepResponse(
+                                    runResponse,
+                                    executionId
+                                );
+
+                            })
+                            .fail(function () {
+
+                                renderError(
+                                    'Impossible de reprendre l’exécution.'
+                                );
+                            });
+                    })
+                    .fail(function () {
+
+                        renderError(
+                            'Une erreur est survenue pendant la validation.'
+                        );
+                    });
+            }
+        );
+
+        /**
+         * Human rejection.
+         *
+         * Pour l'instant on arrête simplement l'exécution
+         * côté interface. On pourra ensuite ajouter
+         * un vrai endpoint reject.
+         */
+        $result.on(
+            'click',
+            '.aips-reject-execution',
+            function () {
+
+                var $button = $(this);
+
+                $button.prop(
+                    'disabled',
+                    true
+                );
+
+                $result
+                    .find('.aips-human-validation')
+                    .html(
+                        '<div class="aips-execution-error">' +
+                        '<div class="aips-execution-error-icon">!</div>' +
+                        '<div>' +
+                        '<h3>Validation refusée</h3>' +
+                        '<p>L’exécution a été arrêtée.</p>' +
+                        '</div>' +
+                        '</div>'
+                    );
+            }
+        );
+    }
+
 
     $(function () {
         initMediaPickers();

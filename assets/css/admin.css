@@ -385,18 +385,6 @@
 }
 
 /* --------------------------------------------------------------------------
-   Result
-   -------------------------------------------------------------------------- */
-
-.aips-agent-result {
-    margin-top: 24px;
-}
-
-.aips-agent-result:empty {
-    display: none;
-}
-
-/* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */
 
@@ -424,3 +412,506 @@
     }
 }
 
+/* =========================================================
+   Agent execution
+   ========================================================= */
+
+.aips-agent-result {
+    --aips-primary: #2271b1;
+    --aips-primary-dark: #135e96;
+    --aips-success: #00a32a;
+    --aips-danger: #d63638;
+    --aips-warning: #dba617;
+
+    --aips-border: #dcdcde;
+    --aips-border-light: #e2e4e7;
+
+    --aips-text: #1d2327;
+    --aips-text-light: #646970;
+
+    --aips-bg: #fff;
+    --aips-bg-light: #f6f7f7;
+
+    width: 100%;
+    max-width: 900px;
+    margin-top: 24px;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   Execution container
+   ========================================================= */
+
+.aips-agent-result__execution {
+    background: var(--aips-bg);
+    border: 1px solid var(--aips-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+.aips-agent-result__header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--aips-border-light);
+}
+
+.aips-agent-result__title {
+    margin: 0 0 6px;
+    font-size: 18px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--aips-text);
+}
+
+.aips-agent-result__subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: var(--aips-text-light);
+}
+
+
+/* =========================================================
+   Progress
+   ========================================================= */
+
+.aips-agent-result__progress {
+    padding: 16px 24px;
+    background: var(--aips-bg-light);
+    border-bottom: 1px solid var(--aips-border-light);
+}
+
+.aips-agent-result__progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.aips-agent-result__progress-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--aips-text);
+}
+
+.aips-agent-result__progress-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--aips-primary);
+}
+
+.aips-agent-result__progress-bar {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    background: #dcdcde;
+    border-radius: 999px;
+}
+
+.aips-agent-result__progress-fill {
+    width: 0;
+    height: 100%;
+    background: var(--aips-primary);
+    border-radius: inherit;
+
+    transition:
+            width 0.35s ease,
+            background-color 0.2s ease;
+}
+
+
+/* =========================================================
+   Steps
+   ========================================================= */
+
+.aips-agent-result__steps {
+    padding: 24px;
+}
+
+.aips-agent-result__step {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    min-height: 64px;
+}
+
+.aips-agent-result__step:last-child {
+    min-height: auto;
+}
+
+
+/* Vertical connector */
+
+.aips-agent-result__step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 32px;
+    left: 15px;
+    width: 2px;
+    height: calc(100% - 8px);
+    background: var(--aips-border);
+}
+
+
+/* =========================================================
+   Step icon
+   ========================================================= */
+
+.aips-agent-result__step-icon {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+
+    border: 2px solid var(--aips-border);
+    border-radius: 50%;
+
+    background: #fff;
+
+    color: var(--aips-text-light);
+    font-size: 14px;
+    font-weight: 600;
+
+    box-sizing: border-box;
+}
+
+
+/* Pending */
+
+.aips-agent-result__step.is-pending
+.aips-agent-result__step-icon {
+    color: #8c8f94;
+    border-color: #c3c4c7;
+}
+
+
+/* Running */
+
+.aips-agent-result__step.is-running
+.aips-agent-result__step-icon {
+    color: #fff;
+    border-color: var(--aips-primary);
+    background: var(--aips-primary);
+}
+
+
+/* Success */
+
+.aips-agent-result__step.is-completed
+.aips-agent-result__step-icon {
+    color: #fff;
+    border-color: var(--aips-success);
+    background: var(--aips-success);
+}
+
+
+/* Failed */
+
+.aips-agent-result__step.is-failed
+.aips-agent-result__step-icon {
+    color: #fff;
+    border-color: var(--aips-danger);
+    background: var(--aips-danger);
+}
+
+
+/* Waiting human */
+
+.aips-agent-result__step.is-waiting
+.aips-agent-result__step-icon {
+    color: #fff;
+    border-color: var(--aips-warning);
+    background: var(--aips-warning);
+}
+
+
+/* =========================================================
+   Step content
+   ========================================================= */
+
+.aips-agent-result__step-content {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 24px;
+}
+
+.aips-agent-result__step:last-child
+.aips-agent-result__step-content {
+    padding-bottom: 0;
+}
+
+
+.aips-agent-result__step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+
+.aips-agent-result__step-label {
+    margin: 4px 0 0;
+
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+
+    color: var(--aips-text);
+}
+
+
+.aips-agent-result__step-status {
+    flex: 0 0 auto;
+
+    font-size: 12px;
+    line-height: 1;
+
+    color: var(--aips-text-light);
+}
+
+
+/* =========================================================
+   Step status colors
+   ========================================================= */
+
+.aips-agent-result__step.is-running
+.aips-agent-result__step-status {
+    color: var(--aips-primary);
+}
+
+.aips-agent-result__step.is-completed
+.aips-agent-result__step-status {
+    color: var(--aips-success);
+}
+
+.aips-agent-result__step.is-failed
+.aips-agent-result__step-status {
+    color: var(--aips-danger);
+}
+
+.aips-agent-result__step.is-waiting
+.aips-agent-result__step-status {
+    color: var(--aips-warning);
+}
+
+
+/* =========================================================
+   Step message
+   ========================================================= */
+
+.aips-agent-result__step-message {
+    margin-top: 5px;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: var(--aips-text-light);
+}
+
+
+/* =========================================================
+   Running animation
+   ========================================================= */
+
+.aips-agent-result__step.is-running
+.aips-agent-result__step-icon::after {
+    content: "";
+
+    position: absolute;
+    inset: -5px;
+
+    border: 2px solid rgba(34, 113, 177, 0.25);
+    border-top-color: var(--aips-primary);
+
+    border-radius: 50%;
+
+    animation: aips-agent-spin 0.8s linear infinite;
+}
+
+@keyframes aips-agent-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   Step result
+   ========================================================= */
+
+.aips-agent-result__step-result {
+    display: none;
+
+    margin-top: 12px;
+    padding: 14px 16px;
+
+    border: 1px solid var(--aips-border-light);
+    border-radius: 6px;
+
+    background: #f9f9f9;
+
+    font-size: 13px;
+    line-height: 1.6;
+
+    color: var(--aips-text);
+
+    overflow-wrap: anywhere;
+}
+
+
+.aips-agent-result__step.is-completed
+.aips-agent-result__step-result,
+.aips-agent-result__step.is-failed
+.aips-agent-result__step-result,
+.aips-agent-result__step.is-waiting
+.aips-agent-result__step-result {
+    display: block;
+}
+
+
+/* =========================================================
+   Final result
+   ========================================================= */
+
+.aips-agent-result__final {
+    padding: 24px;
+
+    border-top: 1px solid var(--aips-border);
+
+    background: #fff;
+}
+
+
+.aips-agent-result__final-title {
+    margin: 0 0 12px;
+
+    font-size: 16px;
+    font-weight: 600;
+
+    color: var(--aips-text);
+}
+
+
+.aips-agent-result__final-content {
+    font-size: 14px;
+    line-height: 1.7;
+
+    color: var(--aips-text);
+}
+
+
+/* =========================================================
+   Human validation
+   ========================================================= */
+
+.aips-agent-result__validation {
+    margin-top: 16px;
+    padding: 16px;
+
+    border: 1px solid #e0b400;
+    border-radius: 6px;
+
+    background: #fff8e5;
+}
+
+
+.aips-agent-result__validation-title {
+    margin: 0 0 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #6b4e00;
+}
+
+
+.aips-agent-result__validation-message {
+    margin: 0 0 14px;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #6b4e00;
+}
+
+
+.aips-agent-result__validation-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+   Error
+   ========================================================= */
+
+.aips-agent-result__error {
+    margin: 16px 24px 24px;
+    padding: 14px 16px;
+
+    border-left: 4px solid var(--aips-danger);
+
+    background: #fcf0f1;
+
+    color: #8a2424;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   Empty state
+   ========================================================= */
+
+.aips-agent-result:empty {
+    display: none;
+}
+
+
+/* =========================================================
+   Loading state
+   ========================================================= */
+
+.aips-agent-result.is-loading {
+    opacity: 0.85;
+}
+
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media screen and (max-width: 600px) {
+
+    .aips-agent-result__header,
+    .aips-agent-result__progress,
+    .aips-agent-result__steps,
+    .aips-agent-result__final {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .aips-agent-result__step-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .aips-agent-result__step-status {
+        margin-bottom: 2px;
+    }
+}
