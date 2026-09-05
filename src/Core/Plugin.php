@@ -10,6 +10,8 @@ use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
 use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 use MyAIAgent\AI\AIService;
@@ -25,6 +27,7 @@ use MyAIAgent\Repository\ApiKeyRepository;
 use MyAIAgent\Repository\ExecutionRepository;
 use MyAIAgent\Repository\HistoryRepository;
 use MyAIAgent\Repository\PromptRepository;
+use MyAIAgent\Services\Blog\BlogPostService;
 use MyAIAgent\Services\Settings;
 
 final class Plugin
@@ -200,6 +203,19 @@ final class Plugin
             ProcessAiResponseStep::class,
             static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep()
         );
+        $this->container->singleton(
+            HumanValidationStep::class,
+            static fn (Container $c): HumanValidationStep => new HumanValidationStep()
+        );
+        $this->container->singleton(
+            BlogPostService::class,
+            static fn (): BlogPostService => new BlogPostService()
+        );
+        $this->container->singleton(
+            CreateBlogStep::class,
+            static fn (Container $c): CreateBlogStep => new CreateBlogStep($c->get(BlogPostService::class))
+        );
+
 
         $this->container->singleton(
             BlogAgent::class,
@@ -208,6 +224,8 @@ final class Plugin
                 $c->get(BuildPromptStep::class),
                 $c->get(AskAiStep::class),
                 $c->get(ProcessAiResponseStep::class),
+                $c->get(HumanValidationStep::class),
+                $c->get(CreateBlogStep::class)
             )
         );
 

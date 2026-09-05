@@ -43,6 +43,8 @@ final class AjaxController extends AbstractController
             $execution = $this->executionManager->run($execution);
             $execution = $this->executionManager->run($execution);
             $execution = $this->executionManager->run($execution);
+            $execution = $this->executionManager->run($execution);
+            $execution = $this->executionManager->run($execution);
             $this->success([
                 'message' => __('Execution terminée.', MY_AI_AGENT_DOMAIN),
                 'execution_id' => $execution->id(),
