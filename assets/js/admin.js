@@ -367,10 +367,35 @@
             $('html, body').animate({ scrollTop: $form.offset().top - 60 }, 300);
         });
 
-        $(document).on('click', '.aips-delete-prompt', function () {
-            if (!window.confirm(i18n.confirmDelete)) { return; }
-            var id = $(this).data('id');
-            post('my_ai_agent_delete_prompt', { id: id }).done(function () { window.location.reload(); });
+        $(document).on('click', '.aips-delete-prompt', function (e) {
+            e.preventDefault();
+
+            if (!window.confirm(i18n.confirmDelete)) {
+                return;
+            }
+
+            var $button = $(this);
+            var $row = $button.closest('tr');
+            // Empêche les clics multiples
+            if ($button.prop('disabled')) {
+                return;
+            }
+            $row.addClass('is-loading');
+            $button.prop('disabled', true);
+
+            var id = $button.data('id');
+
+            post('my_ai_agent_delete_prompt', { id: id })
+                .done(function () {
+                    // Supprime la ligne du tableau
+                    $row.remove();
+                })
+                .fail(function () {
+                    $row.removeClass('is-loading');
+                    // Réactive le bouton uniquement si la requête échoue
+                    $button.prop('disabled', false);
+                    window.alert('Une erreur est survenue.');
+                });
         });
 
         $(document).on('click', '.aips-toggle-prompt', function () {
@@ -378,17 +403,18 @@
             post('my_ai_agent_toggle_prompt', { id: id }).done(function () { window.location.reload(); });
         });
 
-        let isSubmit = false;
         $form.on('submit', function (e) {
             e.preventDefault();
-            // Empêche un deuxième submit pendant la requête
-            if (isSubmit) {
+
+            const $submitButton = $form.find('[type="submit"]');
+
+            if ($submitButton.prop('disabled')) {
                 return;
             }
-            isSubmit = true;
-            const $submitButton = $form.find('[type="submit"]');
-            // Désactive le bouton
-            $submitButton.prop('disabled', true)
+
+            $form.addClass('is-loading');
+            $submitButton.prop('disabled', true);
+
             var data = {
                 id: $('#aips-prompt-id').val(),
                 name: $('#aips-prompt-name-input').val(),
@@ -402,18 +428,14 @@
                     if (res && res.success) {
                         window.location.reload();
                     } else {
+                        $form.removeClass('is-loading');
                         window.alert(res?.data?.message || 'Erreur');
-
-                        // On autorise à nouveau le submit
-                        isSubmit = false;
                         $submitButton.prop('disabled', false);
                     }
                 })
                 .fail(function () {
-                    // En cas d'erreur réseau
-                    isSubmit = false;
+                    $form.removeClass('is-loading');
                     $submitButton.prop('disabled', false);
-
                     window.alert('Une erreur est survenue.');
                 });
         });
