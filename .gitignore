@@ -1,0 +1,42 @@
+# Dependencies
+/vendor/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PHPUnit
+.phpunit.result.cache
+
+# Coverage
+/coverage/
+.phpunit.cache/
+
+# Logs
+*.log
+/logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# PHP
+*.cache
+
+# Composer
+composer.phar
+
+/.phpunit.result.cache
