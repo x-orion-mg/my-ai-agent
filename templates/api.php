@@ -40,7 +40,6 @@ if (! defined('ABSPATH')) {
                             data-provider="<?php echo esc_attr($key->provider); ?>"
                             data-label="<?php echo esc_attr($key->label); ?>"
                             data-model="<?php echo esc_attr($key->model); ?>"
-                            data-endpoint="<?php echo esc_attr($key->endpoint); ?>"
                             data-priority="<?php echo esc_attr((string) $key->priority); ?>"
                             data-active="<?php echo esc_attr($key->isActive ? '1' : '0'); ?>">
                             <td><?php echo esc_html($providers[$key->provider] ?? $key->provider); ?></td>
@@ -76,10 +75,9 @@ if (! defined('ABSPATH')) {
                         <?php endforeach; ?>
                     </select></label></p>
                 <p><label><?php esc_html_e('Libellé', MY_AI_AGENT_DOMAIN); ?><br><input type="text" name="label" id="aips-key-label" class="regular-text"></label></p>
-                <p><label><?php esc_html_e('Clé API', MY_AI_AGENT_DOMAIN); ?><br><input type="password" name="api_key" id="aips-key-value" class="regular-text" autocomplete="new-password"></label>
+                <p><label><?php esc_html_e('Clé API', MY_AI_AGENT_DOMAIN); ?><br><input type="text" name="api_key" id="aips-key-value" class="regular-text" autocomplete="new-password"></label>
                     <span class="description"><?php esc_html_e('Laissez vide en édition pour conserver la clé existante.', MY_AI_AGENT_DOMAIN); ?></span></p>
                 <p><label><?php esc_html_e('Modèle', MY_AI_AGENT_DOMAIN); ?><br><input type="text" name="model" id="aips-key-model" class="regular-text" placeholder="gpt-4o-mini"></label></p>
-                <p><label><?php esc_html_e('Endpoint (facultatif)', MY_AI_AGENT_DOMAIN); ?><br><input type="url" name="endpoint" id="aips-key-endpoint" class="regular-text"></label></p>
                 <p><label><?php esc_html_e('Priorité', MY_AI_AGENT_DOMAIN); ?><br><input type="number" name="priority" id="aips-key-priority" value="10" min="1" step="1"></label></p>
                 <p><label><input type="checkbox" name="is_active" id="aips-key-active" value="1" checked> <?php esc_html_e('Actif', MY_AI_AGENT_DOMAIN); ?></label></p>
                 <p>

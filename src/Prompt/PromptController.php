@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MyAIAgent\Ajax;
+namespace MyAIAgent\Prompt;
 
+use MyAIAgent\Ajax\AbstractController;
 use MyAIAgent\Repository\PromptRepository;
 
 /**

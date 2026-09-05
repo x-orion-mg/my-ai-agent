@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MyAIAgent\Ajax;
+namespace MyAIAgent\API;
 
+use MyAIAgent\Ajax\AbstractController;
 use MyAIAgent\Repository\ApiKeyRepository;
 
 /**
@@ -22,14 +23,11 @@ final class ApiKeyController extends AbstractController
     {
         $this->guard();
 
-        $provider = $this->post('provider');
-        
         $data = [
-            'provider'  => $provider,
+            'provider'  => $this->post('provider'),
             'label'     => $this->post('label'),
             'api_key'   => isset($_POST['api_key']) ? trim(wp_unslash((string) $_POST['api_key'])) : '',
             'model'     => $this->post('model'),
-            'endpoint'  => esc_url_raw(wp_unslash((string) ($_POST['endpoint'] ?? ''))),
             'priority'  => $this->postInt('priority', 10),
             'is_active' => $this->postInt('is_active') === 1,
         ];

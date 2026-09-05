@@ -28,7 +28,7 @@ final class Logger
     public function __construct(Settings $settings, ?string $logDir = null)
     {
         $this->settings = $settings;
-        $this->logDir   = rtrim($logDir ?? (AIPS_STORAGE_DIR . 'logs'), '/\\') . '/';
+        $this->logDir   = rtrim($logDir ?? (MY_AI_AGENT_STORAGE_DIR . 'logs'), '/\\') . '/';
 
         if (! is_dir($this->logDir)) {
             wp_mkdir_p($this->logDir);

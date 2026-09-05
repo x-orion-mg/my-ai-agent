@@ -383,7 +383,7 @@
             $row.addClass('is-loading');
             $button.prop('disabled', true);
 
-            var id = $button.data('id');
+            const id = $button.data('id');
 
             post('my_ai_agent_delete_prompt', { id: id })
                 .done(function () {
@@ -475,9 +475,31 @@
             $('html, body').animate({ scrollTop: $form.offset().top - 60 }, 300);
         });
 
-        $(document).on('click', '.aips-delete-key', function () {
-            if (!window.confirm(i18n.confirmDelete)) { return; }
-            post('aips_delete_api_key', { id: $(this).data('id') }).done(function () { window.location.reload(); });
+        $(document).on('click', '.aips-delete-key', function (e) {
+            e.preventDefault();
+
+            if (!window.confirm(i18n.confirmDelete)) {
+                return;
+            }
+            const $button = $(this);
+            const $row = $button.closest('tr');
+            // Empêche les clics multiples
+            if ($button.prop('disabled')) {
+                return;
+            }
+            $row.addClass('is-loading');
+            $button.prop('disabled', true);
+
+            post('my_ai_agent_delete_api_key', { id: $(this).data('id') })
+                .done(function () {
+                    $row.remove();
+                })
+                .fail(function () {
+                    $row.removeClass('is-loading');
+                    // Réactive le bouton uniquement si la requête échoue
+                    $button.prop('disabled', false);
+                    window.alert('Une erreur est survenue.');
+                });
         });
 
         $(document).on('click', '.aips-toggle-key', function () {
@@ -486,20 +508,39 @@
 
         $form.on('submit', function (e) {
             e.preventDefault();
+
+            const $submitButton = $form.find('[type="submit"]');
+
+            if ($submitButton.prop('disabled')) {
+                return;
+            }
+
+            $form.addClass('is-loading');
+            $submitButton.prop('disabled', true);
+
             var data = {
                 id: $('#aips-key-id').val(),
                 provider: $('#aips-key-provider').val(),
                 label: $('#aips-key-label').val(),
                 api_key: $('#aips-key-value').val(),
                 model: $('#aips-key-model').val(),
-                endpoint: $('#aips-key-endpoint').val(),
                 priority: $('#aips-key-priority').val(),
                 is_active: $('#aips-key-active').is(':checked') ? 1 : 0
             };
-            post('aips_save_api_key', data).done(function (res) {
-                if (res && res.success) { window.location.reload(); }
-                else { window.alert(res.data.message || 'Erreur'); }
-            });
+            post('my_ai_agent_save_api_key', data)
+                .done(function (res) {
+                    if (res && res.success) {
+                        window.location.reload();
+                    }
+                    else {
+                        window.alert(res.data.message || 'Erreur');
+                    }
+                })
+                .fail(function () {
+                    $form.removeClass('is-loading');
+                    $submitButton.prop('disabled', false);
+                    window.alert('Une erreur est survenue.');
+                });
         });
     }
 

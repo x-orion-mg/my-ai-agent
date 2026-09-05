@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace MyAIAgent\Ajax;
 
+use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\Core\Container;
+use MyAIAgent\Prompt\PromptController;
 
 /**
  * Maps AJAX actions to controller methods and registers them with WordPress.

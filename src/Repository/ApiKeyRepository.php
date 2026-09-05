@@ -32,13 +32,12 @@ final class ApiKeyRepository
                 'label'       => sanitize_text_field((string) ($data['label'] ?? '')),
                 'api_key'     => (string) ($data['api_key'] ?? ''),
                 'model'       => sanitize_text_field((string) ($data['model'] ?? '')),
-                'endpoint'    => esc_url_raw((string) ($data['endpoint'] ?? '')),
                 'priority'    => (int) ($data['priority'] ?? 10),
                 'is_active'   => ! empty($data['is_active']) ? 1 : 0,
                 'error_count' => 0,
                 'created_at'  => current_time('mysql', true),
             ],
-            ['%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s']
+            ['%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s']
         );
 
         return (int) $wpdb->insert_id;
@@ -59,7 +58,6 @@ final class ApiKeyRepository
             'label'    => '%s',
             'api_key'  => '%s',
             'model'    => '%s',
-            'endpoint' => '%s',
             'priority' => '%d',
             'is_active'=> '%d',
         ];
@@ -74,7 +72,6 @@ final class ApiKeyRepository
                 'provider'  => sanitize_key((string) $value),
                 'label'     => sanitize_text_field((string) $value),
                 'model'     => sanitize_text_field((string) $value),
-                'endpoint'  => esc_url_raw((string) $value),
                 'priority'  => (int) $value,
                 'is_active' => ! empty($value) ? 1 : 0,
                 default     => (string) $value,

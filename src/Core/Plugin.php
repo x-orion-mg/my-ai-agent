@@ -6,17 +6,18 @@ namespace MyAIAgent\Core;
 
 
 use MyAIAgent\Admin\AdminMenu;
-use MyAIAgent\AI\AIService;
 use MyAIAgent\Agent\AgentManager;
+use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxRouter;
-use MyAIAgent\Ajax\PromptController;
+use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\Execution\ExecutionManager;
 use MyAIAgent\Logger\Logger;
+use MyAIAgent\Prompt\PromptController;
 use MyAIAgent\Provider\ProviderFactory;
 use MyAIAgent\Repository\ApiKeyRepository;
 use MyAIAgent\Repository\ExecutionRepository;
-use MyAIAgent\Repository\PromptRepository;
 use MyAIAgent\Repository\HistoryRepository;
+use MyAIAgent\Repository\PromptRepository;
 use MyAIAgent\Services\Settings;
 
 final class Plugin
@@ -150,6 +151,10 @@ final class Plugin
         $this->container->singleton(
             PromptController::class,
             static fn(Container $c): PromptController => new PromptController($c->get(PromptRepository::class))
+        );
+        $this->container->singleton(
+            ApiKeyController::class,
+            static fn(Container $c): ApiKeyController => new ApiKeyController($c->get(ApiKeyRepository::class))
         );
 
 
