@@ -13,7 +13,22 @@ if (! defined('ABSPATH')) {
 ?>
 <div class="wrap aips-wrap">
     <h1><?php esc_html_e('Prompts', MY_AI_AGENT_DOMAIN); ?></h1>
-    <p class="aips-subtitle"><?php esc_html_e('Variables disponibles : {{description_utilisateur}}, {{image}}, {{categorie}}, {{prix}}, {{promotion}}, {{produits_associes}}, {{langue}}, {{orientation}}.', MY_AI_AGENT_DOMAIN); ?></p>
+    <p class="aips-subtitle">
+        <?php esc_html_e('Variables disponibles : {{description_utilisateur}}, {{image}}, {{categorie}}, {{prix}}, {{promotion}}, {{produits_associes}}, {{langue}}, {{orientation}}.', MY_AI_AGENT_DOMAIN); ?>
+    </p>
+    <h3>Paramètres</h3>
+    <ul>
+        <li><strong>Thème de l'article :</strong> {{theme}}</li>
+        <li><strong>Ton rédactionnel :</strong> {{tone}}</li>
+        <li><strong>Langue de rédaction :</strong> {{language}}</li>
+        <li><strong>Public cible :</strong> {{target_audience}}</li>
+        <li><strong>Mot-clé principal :</strong> {{main_keyword}}</li>
+        <li><strong>Mots-clés secondaires :</strong> {{secondary_keywords}}</li>
+        <li><strong>Longueur souhaitée :</strong> {{word_count}} mots</li>
+        <li><strong>Objectif de l'article :</strong> {{objective}}</li>
+        <li><strong>Nom du site ou de la marque :</strong> {{brand_name}}</li>
+        <li><strong>Contexte supplémentaire :</strong> {{additional_context}}</li>
+    </ul>
 
     <div class="aips-columns">
         <div class="aips-columns__list">

@@ -6,11 +6,19 @@ namespace MyAIAgent\Agent\Agents\Blog;
 
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
+use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
+use MyAIAgent\Repository\PromptRepository;
 
 final class BlogAgent implements AgentInterface
 {
+
+    public function __construct(
+        private readonly ValidateInputStep $validateInputStep,
+        private readonly BuildPromptStep $buildPromptStep,
+    ) {
+    }
     public function id(): string
     {
         return 'generate-blog';
@@ -56,36 +64,26 @@ final class BlogAgent implements AgentInterface
     public function steps(): array
     {
         return [
-            new ValidateInputStep(),
+            $this->validateInputStep,
+            $this->buildPromptStep
         ];
     }
 
 
     /**
+     * Validation minimale avant création de l'exécution.
+     *
      * @param array<string, mixed> $input
      */
     public function validate(array $input): void
     {
-        $required = [
-            'theme',
-            'language',
-            'tone',
-            'provider',
-            'prompt',
-        ];
-
-        foreach ($required as $field) {
-            if (
-                !isset($input[$field])
-                || trim((string) $input[$field]) === ''
-            ) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        __('Le champ "%s" est obligatoire.', MY_AI_AGENT_DOMAIN),
-                        $field
-                    )
-                );
-            }
+        if (
+            !isset($input['theme'])
+            || trim((string) $input['theme']) === ''
+        ) {
+            throw new InvalidArgumentException(
+                __('Le thème est obligatoire.', MY_AI_AGENT_DOMAIN)
+            );
         }
     }
 }

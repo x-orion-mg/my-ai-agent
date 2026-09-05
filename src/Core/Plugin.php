@@ -8,6 +8,8 @@ namespace MyAIAgent\Core;
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
+use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
@@ -162,9 +164,21 @@ final class Plugin
             AjaxController::class,
             static fn(Container $c): AjaxController => new AjaxController($c->get(ExecutionManager::class))
         );
+
+        $this->container->singleton(
+            ValidateInputStep::class,
+            static fn (Container $c): ValidateInputStep => new ValidateInputStep()
+        );
+        $this->container->singleton(
+            BuildPromptStep::class,
+            static fn (Container $c): BuildPromptStep => new BuildPromptStep($c->get(PromptRepository::class))
+        );
         $this->container->singleton(
             BlogAgent::class,
-            static fn (): BlogAgent => new BlogAgent()
+            static fn (Container $c): BlogAgent => new BlogAgent(
+                $c->get(ValidateInputStep::class),
+                $c->get(BuildPromptStep::class),
+            )
         );
 
         //admin
