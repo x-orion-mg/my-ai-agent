@@ -76,7 +76,7 @@ final class BlogAgent implements AgentInterface
             $this->buildPromptStep,
             $this->askAiStep,
             $this->processAiResponseStep,
-            $this->humanValidationStep,
+            //$this->humanValidationStep,
             $this->createBlogStep,
         ];
     }

@@ -21,10 +21,11 @@ final class HumanValidationStep implements AgentStepInterface
 
     public function execute(AgentContext $context): StepResult
     {
-        return StepResult::continue(
+        return StepResult::waitingHuman(
             data: [
-                'validation_required' => false,
+                'validation_required' => true,
             ],
         );
+
     }
 }

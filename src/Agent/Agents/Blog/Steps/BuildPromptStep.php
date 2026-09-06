@@ -138,6 +138,7 @@ PROMPT;
 
 
         return StepResult::continue([
+            'message' => __('Le prompt a été construit avec succès.', MY_AI_AGENT_DOMAIN),
             'prompt' => $finalPrompt,
         ]);
     }

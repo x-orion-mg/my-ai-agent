@@ -33,7 +33,17 @@ final class ProcessAiResponseStep implements AgentStepInterface {
         if ($validationError !== null) {
             return StepResult::failed($validationError);
         }
-        return StepResult::continue([ 'ai_response_raw' => $response, 'blog' => $decoded, ]);
+
+        $message = sprintf(
+            __( 'La réponse de l\'IA a été traitée avec succès. Veuillez valider le contenu généré par l’IA avant de créer l’article.\n\n<pre>%s</pre>', MY_AI_AGENT_DOMAIN ),
+            esc_html($json)
+        );
+        return StepResult::continue([
+            'message' => $message,
+            'ai_response_raw' => $response,
+            'blog' => $decoded,
+            ]
+        );
     }
     private function cleanJsonResponse(string $response): string {
         $response = trim($response);

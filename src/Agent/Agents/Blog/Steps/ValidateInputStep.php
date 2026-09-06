@@ -46,6 +46,8 @@ final class ValidateInputStep implements AgentStepInterface
             }
         }
 
-        return StepResult::continue();
+        return StepResult::continue(
+            ['message' => __('Tous les paramètres sont valides.', MY_AI_AGENT_DOMAIN)],
+        );
     }
 }

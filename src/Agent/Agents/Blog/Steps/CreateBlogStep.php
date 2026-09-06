@@ -29,9 +29,17 @@ final class CreateBlogStep implements AgentStepInterface
 
     public function execute(AgentContext $context): StepResult
     {
-        $postTitle = $context->get('postTitle');
-        $excerpt   = $context->get('excerpt');
-        $content   = $context->get('content');
+        $blog = $context->get('blog');
+
+        if (! is_array($blog)) {
+            return StepResult::failed(
+                'Les données du blog sont manquantes ou invalides.'
+            );
+        }
+
+        $postTitle = $blog['postTitle'] ?? null;
+        $excerpt   = $blog['excerpt'] ?? '';
+        $content   = $blog['content'] ?? '';
 
         if (! is_string($postTitle) || trim($postTitle) === '') {
             return StepResult::failed(
@@ -45,20 +53,30 @@ final class CreateBlogStep implements AgentStepInterface
             );
         }
 
+        if (! is_string($excerpt)) {
+            $excerpt = '';
+        }
+
         try {
             $postId = $this->blogPostService->create([
                 'postTitle' => $postTitle,
-                'excerpt'   => is_string($excerpt) ? $excerpt : '',
+                'excerpt'   => $excerpt,
                 'content'   => $content,
             ]);
-
+            $editUrl = get_edit_post_link($postId);
+            $message = sprintf(
+                __('L’article a été créé avec succès. <a href="%s" target="_blank">Modifier l’article</a>', MY_AI_AGENT_DOMAIN),
+                esc_url($editUrl)
+            );
             return StepResult::continue([
-                'post_id' => $postId,
+                'message' => $message,
             ]);
+
         } catch (Throwable $e) {
             return StepResult::failed(
                 $e->getMessage()
             );
         }
     }
+
 }
