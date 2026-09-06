@@ -25,7 +25,7 @@ final class AskAiStep implements AgentStepInterface
     {
         $prompt = $context->get('prompt');
 
-        if (! is_string($prompt) || trim($prompt) === '') {
+        if (!is_string($prompt) || trim($prompt) === '') {
             return StepResult::failed(
                 'Le prompt est manquant.'
             );
@@ -33,21 +33,55 @@ final class AskAiStep implements AgentStepInterface
 
         $provider = $context->get('provider');
 
-        if (! is_string($provider) || trim($provider) === '') {
+        if (!is_string($provider) || trim($provider) === '') {
             return StepResult::failed(
                 'Aucun fournisseur IA n’a été sélectionné.'
             );
         }
+        /*
+                 * Mode d'exécution :
+                 *
+                 * test = utilise une réponse JSON locale
+                 * ai   = utilise réellement le fournisseur IA
+                 */
+        $mode = $context->get('mode');
 
+        if (! is_string($mode) || trim($mode) === '') {
+            $mode = 'ai';
+        }
         try {
-            /*$result = $context->ai()->ask(
-                $provider,
-                $prompt,
-                [
-                    'session_id' => $context->executionId(),
-                ]
-            );*/
-            $test_result = <<<'JSON'
+            if ($mode === 'test') {
+               return $this->getTestResult();
+            } else {
+                $result = $context->ai()->ask(
+                    $provider,
+                    $prompt,
+                    [
+                        'session_id' => $context->executionId(),
+                    ]
+                );
+
+
+                return StepResult::continue([
+                    'message' => __('Réponse de l’IA reçue avec succès.', MY_AI_AGENT_DOMAIN),
+                    'ai_response' => $result->text(),
+                    'ai_provider' => $result->provider(),
+                    'ai_model' => $result->model(),
+                    'ai_finish_reason' => $result->finishReason(),
+                    'ai_usage' => $result->usage(),
+                ]);
+            }
+
+        } catch (\Throwable $exception) {
+            return StepResult::failed(
+                $exception->getMessage()
+            );
+        }
+    }
+
+    private function getTestResult(): StepResult
+    {
+        $test_result = <<<'JSON'
 {
   "postTitle": "Comment faire un gâteau : le guide simple pour tous les débutants",
   "excerpt": "Envie de faire un gâteau maison ? Découvrez notre guide pas à pas, des ingrédients aux étapes de préparation, pour réaliser un gâteau délicieux même si vous êtes débutant.",
@@ -100,19 +134,14 @@ final class AskAiStep implements AgentStepInterface
 }
 JSON;
 
-            return StepResult::continue([
-                'message' => __('Réponse de l’IA reçue avec succès.', MY_AI_AGENT_DOMAIN),
-                'ai_response' => $test_result,// $result->text(),
-                'ai_provider' => 'openrouter',// $result->provider(),
-                'ai_model' => 'minimax/minimax-m3:free',// $result->model(),
-                'ai_finish_reason' => '',// $result->finishReason(),
-                'ai_usage' => [],// $result->usage(),
-            ]);
-        } catch (\Throwable $exception) {
-            return StepResult::failed(
-                $exception->getMessage()
-            );
-        }
+       return StepResult::continue([
+            'message' => __('Réponse de l’IA reçue avec succès.', MY_AI_AGENT_DOMAIN),
+            'ai_response' => $test_result,// $result->text(),
+            'ai_provider' => 'openrouter',// $result->provider(),
+            'ai_model' => 'minimax/minimax-m3:free',// $result->model(),
+            'ai_finish_reason' => '',// $result->finishReason(),
+            'ai_usage' => [],// $result->usage(),
+        ]);
     }
 
 }
