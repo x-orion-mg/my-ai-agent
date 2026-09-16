@@ -21,9 +21,15 @@ final class HumanValidationStep implements AgentStepInterface
 
     public function execute(AgentContext $context): StepResult
     {
-        return StepResult::waitingHuman(
+        /*return StepResult::waitingHuman(
             data: [
                 'validation_required' => true,
+            ],
+        );*/
+        return StepResult::continue(
+            data: [
+                'message' => __('Veuillez valider le contenu généré par l’IA avant de créer l’article.', MY_AI_AGENT_DOMAIN),
+                'validation_required' => false,
             ],
         );
 

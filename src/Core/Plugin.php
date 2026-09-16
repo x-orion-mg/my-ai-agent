@@ -8,12 +8,14 @@ namespace MyAIAgent\Core;
 use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
+use MyAIAgent\Agent\Agents\Blog\Response\BlogResponseValidator;
 use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
+use MyAIAgent\Agent\Response\AiResponseParser;
+use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
@@ -97,11 +99,6 @@ final class Plugin
 
     private function registerServices(): void
     {
-        $this->container->singleton(
-            AIService::class,
-            static fn (): AIService => new AIService()
-        );
-
         $this->container->singleton(
             AgentManager::class,
             static fn (): AgentManager => new AgentManager()
@@ -203,9 +200,22 @@ final class Plugin
             AskAiStep::class,
             static fn (Container $c): AskAiStep => new AskAiStep()
         );
+
+        $this->container->singleton(
+            AiResponseParser::class,
+            static fn (Container $c): AiResponseParser => new AiResponseParser()
+        );
+        $this->container->singleton(
+            BlogResponseValidator::class,
+            static fn (Container $c): BlogResponseValidator => new BlogResponseValidator()
+        );
+
         $this->container->singleton(
             ProcessAiResponseStep::class,
-            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep()
+            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
+                $c->get(AiResponseParser::class),
+                $c->get(BlogResponseValidator::class),
+            )
         );
         $this->container->singleton(
             HumanValidationStep::class,

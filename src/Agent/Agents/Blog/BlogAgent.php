@@ -8,11 +8,11 @@ use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
 use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\ProcessAiResponseStep;
-use MyAIAgent\Agent\AgentStepInterface;
-use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
+use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
+use MyAIAgent\Agent\AgentStepInterface;
+use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
 
 
 final class BlogAgent implements AgentInterface
@@ -76,7 +76,7 @@ final class BlogAgent implements AgentInterface
             $this->buildPromptStep,
             $this->askAiStep,
             $this->processAiResponseStep,
-            //$this->humanValidationStep,
+            $this->humanValidationStep,
             $this->createBlogStep,
         ];
     }

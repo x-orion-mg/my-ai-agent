@@ -45,7 +45,7 @@ final class AskAiStep implements AgentStepInterface
                  * ai   = utilise réellement le fournisseur IA
                  */
         $mode = $context->get('mode');
-
+        $mode = 'test';
         if (! is_string($mode) || trim($mode) === '') {
             $mode = 'ai';
         }
