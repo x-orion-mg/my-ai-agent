@@ -29,7 +29,7 @@ final class CreateBlogStep implements AgentStepInterface
 
     public function execute(AgentContext $context): StepResult
     {
-        $blog = $context->get('blog');
+        $blog = $context->get('data');
 
         if (! is_array($blog)) {
             return StepResult::failed(

@@ -69,7 +69,7 @@ final class ProcessAiResponseStep implements AgentStepInterface
         return StepResult::continue([
             'message' => $message,
             'ai_response_raw' => $response,
-            'blog' => $data,
+            'data' => $data,
         ]);
     }
 }

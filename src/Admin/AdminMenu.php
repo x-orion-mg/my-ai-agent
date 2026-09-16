@@ -7,6 +7,7 @@ namespace MyAIAgent\Admin;
 use MyAIAgent\Admin\Pages\ApiPage;
 use MyAIAgent\Admin\Pages\DashboardPage;
 use MyAIAgent\Admin\Pages\GenerateBlogPage;
+use MyAIAgent\Admin\Pages\GenerateProductPage;
 use MyAIAgent\Admin\Pages\HistoryPage;
 use MyAIAgent\Admin\Pages\LogsPage;
 use MyAIAgent\Admin\Pages\PromptsPage;
@@ -33,6 +34,7 @@ final class AdminMenu
         $this->pages = [
             new DashboardPage($container),
             new GenerateBlogPage($container),
+            new GenerateProductPage($container),
             new SettingsPage($container),
             new PromptsPage($container),
             new ApiPage($container),

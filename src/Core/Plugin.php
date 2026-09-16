@@ -9,13 +9,17 @@ use MyAIAgent\Admin\AdminMenu;
 use MyAIAgent\Agent\AgentManager;
 use MyAIAgent\Agent\Agents\Blog\BlogAgent;
 use MyAIAgent\Agent\Agents\Blog\Response\BlogResponseValidator;
-use MyAIAgent\Agent\Agents\Blog\Steps\AskAiStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\ValidateInputStep;
+use MyAIAgent\Agent\Agents\Product\ProductAgent;
+use MyAIAgent\Agent\Agents\Product\Response\ProductResponseValidator;
+use MyAIAgent\Agent\Agents\Product\Steps\BuildPromptStep as ProductBuildPromptStep;
+use MyAIAgent\Agent\Agents\Product\Steps\CreateProductStep;
 use MyAIAgent\Agent\Response\AiResponseParser;
+use MyAIAgent\Agent\Steps\AskAiStep;
 use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
+use MyAIAgent\Agent\Steps\ValidateInputStep;
 use MyAIAgent\AI\AIService;
 use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
@@ -31,6 +35,7 @@ use MyAIAgent\Repository\ExecutionRepository;
 use MyAIAgent\Repository\HistoryRepository;
 use MyAIAgent\Repository\PromptRepository;
 use MyAIAgent\Services\Blog\BlogPostService;
+use MyAIAgent\Services\Product\ProductService;
 use MyAIAgent\Services\Settings;
 
 final class Plugin
@@ -211,7 +216,7 @@ final class Plugin
         );
 
         $this->container->singleton(
-            ProcessAiResponseStep::class,
+            'blog.process_ai_response_step',
             static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
                 $c->get(AiResponseParser::class),
                 $c->get(BlogResponseValidator::class),
@@ -237,9 +242,47 @@ final class Plugin
                 $c->get(ValidateInputStep::class),
                 $c->get(BuildPromptStep::class),
                 $c->get(AskAiStep::class),
-                $c->get(ProcessAiResponseStep::class),
+                $c->get('blog.process_ai_response_step'),
                 $c->get(HumanValidationStep::class),
                 $c->get(CreateBlogStep::class)
+            )
+        );
+
+        $this->container->singleton(
+            ProductBuildPromptStep::class,
+            static fn (Container $c): ProductBuildPromptStep => new ProductBuildPromptStep($c->get(PromptRepository::class))
+        );
+
+        $this->container->singleton(
+            ProductResponseValidator::class,
+            static fn (Container $c): ProductResponseValidator => new ProductResponseValidator()
+        );
+
+        $this->container->singleton(
+            ProductService::class,
+            static fn (Container $c): ProductService => new ProductService()
+        );
+        $this->container->singleton(
+            CreateProductStep::class,
+            static fn (Container $c): CreateProductStep => new CreateProductStep($c->get(ProductService::class))
+        );
+
+        $this->container->singleton(
+            'product.process_ai_response_step',
+            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
+                $c->get(AiResponseParser::class),
+                $c->get(ProductResponseValidator::class),
+            )
+        );
+
+        $this->container->singleton(
+            ProductAgent::class,
+            static fn (Container $c): ProductAgent => new ProductAgent(
+                $c->get(ValidateInputStep::class),
+                $c->get(ProductBuildPromptStep::class),
+                $c->get(AskAiStep::class),
+                $c->get('product.process_ai_response_step'),
+                $c->get(CreateProductStep::class)
             )
         );
 
@@ -261,43 +304,10 @@ final class Plugin
         $agentManager = $this->container->get(AgentManager::class);
 
         $agentManager->register(
-            $this->container->get(BlogAgent::class)
+            $this->container->get(BlogAgent::class),
         );
-    }
-
-    private function testExecution(): void
-    {
-        /** @var ExecutionManager $manager */
-        $manager = $this->container->get(
-            ExecutionManager::class
-        );
-
-        $execution = $manager->create(
-            agentId: 'test',
-            input: [
-                'message' => 'Réponds uniquement par : Execution fonctionne.',
-            ]
-        );
-
-        error_log(
-            'EXECUTION CREATED: ' . $execution->id()
-        );
-
-        $execution = $manager->run($execution);
-
-        error_log(
-            'EXECUTION STATUS: ' . $execution->status()
-        );
-
-        error_log(
-            'EXECUTION DATA: ' . print_r(
-                $execution->data(),
-                true
-            )
-        );
-
-        error_log(
-            'EXECUTION ERROR: ' . ($execution->error() ?? 'none')
+        $agentManager->register(
+            $this->container->get(ProductAgent::class)
         );
     }
 

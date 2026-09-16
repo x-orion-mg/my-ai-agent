@@ -2,39 +2,38 @@
 
 declare(strict_types=1);
 
-namespace MyAIAgent\Agent\Agents\Blog;
+namespace MyAIAgent\Agent\Agents\Product;
 
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
-use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
-use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
+use MyAIAgent\Agent\Agents\Product\Steps\CreateProductStep;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\Steps\AskAiStep;
-use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\Steps\ValidateInputStep;
+use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
+use MyAIAgent\Agent\Agents\Product\Steps\BuildPromptStep;
 
 
-final class BlogAgent implements AgentInterface
+
+final readonly class ProductAgent implements AgentInterface
 {
 
     public function __construct(
-        private readonly ValidateInputStep $validateInputStep,
-        private readonly BuildPromptStep $buildPromptStep,
-        private readonly AskAiStep $askAiStep,
-        private readonly ProcessAiResponseStep $processAiResponseStep,
-        private readonly HumanValidationStep $humanValidationStep,
-        private readonly CreateBlogStep $createBlogStep
+        private ValidateInputStep     $validateInputStep,
+        private BuildPromptStep       $buildPromptStep,
+        private AskAiStep             $askAiStep,
+        private ProcessAiResponseStep $processAiResponseStep,
+        private CreateProductStep     $createProductStep
     ) {
     }
     public function id(): string
     {
-        return 'generate-blog';
+        return 'generate-product';
     }
 
     public function name(): string
     {
-        return __('Générateur d’articles de blog', MY_AI_AGENT_DOMAIN);
+        return __('Générateur de produits', MY_AI_AGENT_DOMAIN);
     }
 
     /**
@@ -76,8 +75,7 @@ final class BlogAgent implements AgentInterface
             $this->buildPromptStep,
             $this->askAiStep,
             $this->processAiResponseStep,
-            $this->humanValidationStep,
-            $this->createBlogStep,
+            $this->createProductStep,
         ];
     }
 
