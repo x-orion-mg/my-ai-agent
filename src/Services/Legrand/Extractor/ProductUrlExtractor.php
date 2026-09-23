@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace  MyAIAgent\Services\Legrand\Extractor;
+namespace MyAIAgent\Services\Legrand\Extractor;
 
 use  MyAIAgent\Services\Legrand\Client\LegrandHttpClient;
 use  MyAIAgent\Services\Legrand\Support\LegrandReference;
@@ -16,7 +16,8 @@ final class ProductUrlExtractor
 {
     public function __construct(
         private readonly LegrandHttpClient $http
-    ) {
+    )
+    {
     }
 
     /**
@@ -182,9 +183,8 @@ final class ProductUrlExtractor
      * Recherche la carte produit correspondant
      * au nœud data-sku.
      */
-    private function findProductCard(
-        DOMNode $node
-    ): ?DOMElement {
+    private function findProductCard(DOMNode $node): ?DOMElement
+    {
         $current = $node;
 
         /*
@@ -211,11 +211,8 @@ final class ProductUrlExtractor
     /**
      * Recherche un lien produit dans une carte.
      */
-    private function findProductLink(
-        DOMXPath $xpath,
-        DOMElement $card,
-        string $reference
-    ): ?string {
+    private function findProductLink(DOMXPath $xpath, DOMElement $card, string $reference ): ?string
+    {
         $links = $xpath->query(
             './/a[@href]',
             $card
@@ -285,10 +282,8 @@ final class ProductUrlExtractor
      * recherche directement dans tous les liens
      * de la page de résultats.
      */
-    private function findProductLinkGlobally(
-        DOMXPath $xpath,
-        string $reference
-    ): ?string {
+    private function findProductLinkGlobally( DOMXPath $xpath,  string   $reference ): ?string
+    {
         $links = $xpath->query(
             '//a[@href]'
         );
@@ -352,10 +347,8 @@ final class ProductUrlExtractor
      * refusé : ...-1419160
      * refusé : ...-419160A
      */
-    private function referenceExistsInUrl(
-        string $url,
-        string $reference
-    ): bool {
+    private function referenceExistsInUrl( string $url,  string $reference ): bool
+    {
         return preg_match(
                 '/(?:^|[-_\/])'
                 . preg_quote($reference, '/')
@@ -367,10 +360,8 @@ final class ProductUrlExtractor
     /**
      * Vérifie la présence exacte d'une classe CSS.
      */
-    private function hasCssClass(
-        DOMElement $element,
-        string $class
-    ): bool {
+    private function hasCssClass( DOMElement $element, string $class ): bool
+    {
         $classes = preg_split(
             '/\s+/',
             trim(

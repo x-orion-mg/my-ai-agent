@@ -9,6 +9,7 @@ use  MyAIAgent\Services\Legrand\Extractor\ProductImageExtractor;
 use  MyAIAgent\Services\Legrand\Extractor\ProductTechnicalDataExtractor;
 use  MyAIAgent\Services\Legrand\Extractor\ProductUrlExtractor;
 use  MyAIAgent\Services\Legrand\Support\LegrandReference;
+use MyAIAgent\Services\Legrand\Support\LegrandUrl;
 
 final class LegrandProductService
 {
@@ -17,6 +18,7 @@ final class LegrandProductService
         private readonly ProductUrlExtractor $urlExtractor,
         private readonly ProductImageExtractor $imageExtractor,
         private readonly ProductTechnicalDataExtractor $technicalDataExtractor,
+        private readonly LegrandUrl $legrandUrl
     ) {
     }
 
@@ -33,12 +35,10 @@ final class LegrandProductService
 
         /*
          * ======================================================
-         * 1. PAGE PRODUIT
+         * 1. PAGE PRODUIT MG
          * ======================================================
          */
-        $url = $this->urlExtractor->find(
-            $reference
-        );
+        $url = $this->urlExtractor->find($reference);
 
         if ($url === null) {
             return null;
@@ -49,38 +49,22 @@ final class LegrandProductService
          * 2. HTML PRODUIT
          * ======================================================
          */
-        $html = $this->http->get($url);
+        $url = $this->legrandUrl->findLegrandProductPage($reference);
+        $html = $this->http->getEn($url);
 
         /*
          * ======================================================
          * 3. IMAGE
          * ======================================================
          */
-        $image = $this->imageExtractor->extract(
-            $html,
-            $reference
-        );
-
-        /*
-         * ======================================================
-         * 4. FALLBACK PIM
-         * ======================================================
-         */
-        if ($image === null) {
-            $image = $this->imageExtractor->findDirectPim(
-                $reference
-            );
-        }
+        $image = $this->imageExtractor->extract($html, $reference);
 
         /*
          * ======================================================
          * 5. CARACTÉRISTIQUES
          * ======================================================
          */
-        $technicalData =
-            $this->technicalDataExtractor->extract(
-                $html
-            );
+        $technicalData = $this->technicalDataExtractor->extract($html);
 
         /*
          * ======================================================

@@ -13,7 +13,7 @@ final class LegrandProduct
         public readonly string $reference,
         public readonly ?string $url,
         public readonly ?string $image,
-        public readonly array $technicalData = [],
+        public readonly ?string $technicalData ,
     ) {
     }
 
@@ -22,7 +22,7 @@ final class LegrandProduct
      *     reference: string,
      *     url: ?string,
      *     image: ?string,
-     *     technicalData: array<string,string>
+     *     technicalData: ?string
      * }
      */
     public function toArray(): array

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MyAIAgent\Services\Legrand\Extractor;
 
-use  MyAIAgent\Services\Legrand\Client\LegrandHttpClient;
-use  MyAIAgent\Services\Legrand\Support\LegrandReference;
 use  MyAIAgent\Services\Legrand\Support\LegrandUrl;
 use DOMDocument;
 use DOMElement;
@@ -14,16 +12,12 @@ use DOMXPath;
 final readonly class ProductImageExtractor
 {
     public function __construct(
-        private LegrandHttpClient $http
-    ) {
+    )
+    {
     }
 
-    public function extract(
-        string $html,
-        string $reference
-    ): ?string {
-        $reference = LegrandReference::normalize($reference);
-
+    public function extract(string $html, string $reference): ?string
+    {
         if ($reference === '') {
             return null;
         }
@@ -152,10 +146,8 @@ final readonly class ProductImageExtractor
         return null;
     }
 
-    private function extractFromJsonLd(
-        string $html,
-        string $reference
-    ): ?string {
+    private function extractFromJsonLd(string $html, string $reference): ?string
+    {
         preg_match_all(
             '#<script[^>]+type=["\']application/ld\+json["\'][^>]*>'
             . '(.*?)'
@@ -186,7 +178,7 @@ final readonly class ProductImageExtractor
 
                 if (
                     isset($product['sku'])
-                    && (string) $product['sku']
+                    && (string)$product['sku']
                     !== $reference
                 ) {
                     continue;
@@ -202,71 +194,12 @@ final readonly class ProductImageExtractor
                     is_array($image)
                     && isset($image['url'])
                 ) {
-                    return (string) $image['url'];
+                    return (string)$image['url'];
                 }
 
                 if (is_string($image)) {
                     return $image;
                 }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Recherche directe dans le PIM.
-     *
-     * Utilisée comme fallback.
-     */
-    public function findDirectPim(
-        string $reference
-    ): ?string {
-        $reference = LegrandReference::normalize(
-            $reference
-        );
-
-        if ($reference === '') {
-            return null;
-        }
-
-        $folder = substr($reference, 0, 2);
-
-        $candidates = [
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '-LEGRAND-1000.jpg',
-
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '-LEGRAND-800.jpg',
-
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '-LEGRAND-600.jpg',
-
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '-LEGRAND-500.jpg',
-
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '-LEGRAND.jpg',
-
-            LegrandUrl::PIM
-            . $folder . '/'
-            . $reference
-            . '.jpg',
-        ];
-
-        foreach ($candidates as $url) {
-            if ($this->http->exists($url)) {
-                return $url;
             }
         }
 

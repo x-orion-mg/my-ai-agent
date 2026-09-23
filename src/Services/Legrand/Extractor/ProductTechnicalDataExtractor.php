@@ -10,10 +10,15 @@ use DOMXPath;
 
 final class ProductTechnicalDataExtractor
 {
+    public function __construct(
+    )
+    {
+    }
     /**
-     * @return array<string, string>
+     * Retourne uniquement les tableaux de caractéristiques techniques
+     * sous forme de HTML.
      */
-    public function extract(string $html): array
+    public function extract(string $html): string
     {
         $dom = new DOMDocument();
 
@@ -26,140 +31,32 @@ final class ProductTechnicalDataExtractor
             LIBXML_NONET
         );
 
-        if (!$loaded) {
-            return [];
-        }
+        libxml_clear_errors();
 
+        if (!$loaded) {
+            print_r("<br>ProductTechnicalDataExtractor: extract: loadHTML failed\n");
+            return '';
+        }
+print_r("<br>ProductTechnicalDataExtractor: extract: loadHTML success\n");
         $xpath = new DOMXPath($dom);
 
-        $data = [];
-
-        /*
-         * ======================================================
-         * 1. TABLES
-         * ======================================================
-         */
         $tables = $xpath->query('//table');
 
-        if ($tables !== false) {
-            foreach ($tables as $table) {
-                if (!$table instanceof DOMElement) {
-                    continue;
-                }
-
-                $rows = $xpath->query(
-                    './/tr',
-                    $table
-                );
-
-                if ($rows === false) {
-                    continue;
-                }
-
-                foreach ($rows as $row) {
-                    $cells = $xpath->query(
-                        './th|./td',
-                        $row
-                    );
-
-                    if (
-                        $cells === false
-                        || $cells->length < 2
-                    ) {
-                        continue;
-                    }
-
-                    $key = trim(
-                        $cells->item(0)?->textContent ?? ''
-                    );
-
-                    $value = trim(
-                        $cells->item(1)?->textContent ?? ''
-                    );
-
-                    if ($key === '' || $value === '') {
-                        continue;
-                    }
-
-                    $data[$this->clean($key)]
-                        = $this->clean($value);
-                }
-            }
+        if ($tables === false || $tables->length === 0) {
+            print_r("<br>ProductTechnicalDataExtractor: extract: no tables found\n");
+            return '';
         }
 
-        /*
-         * ======================================================
-         * 2. BLOCS DE CARACTÉRISTIQUES
-         * ======================================================
-         *
-         * Fallback pour les structures :
-         *
-         * <div>
-         *   <span>Courant nominal</span>
-         *   <span>16 A</span>
-         * </div>
-         */
-        $possibleRows = $xpath->query(
-            '//*[contains(
-                translate(
-                    @class,
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                    "abcdefghijklmnopqrstuvwxyz"
-                ),
-                "technical"
-            )]'
-        );
+        $result = '';
 
-        if ($possibleRows !== false) {
-            foreach ($possibleRows as $element) {
-                if (!$element instanceof DOMElement) {
-                    continue;
-                }
-
-                $children = [];
-
-                foreach ($element->childNodes as $child) {
-                    if (
-                        $child instanceof DOMElement
-                    ) {
-                        $text = $this->clean(
-                            $child->textContent
-                        );
-
-                        if ($text !== '') {
-                            $children[] = $text;
-                        }
-                    }
-                }
-
-                if (count($children) >= 2) {
-                    $key = array_shift($children);
-
-                    if ($key !== null) {
-                        $data[$key] = implode(
-                            ' ',
-                            $children
-                        );
-                    }
-                }
+        foreach ($tables as $table) {
+            if (!$table instanceof DOMElement) {
+                continue;
             }
+
+            $result .= $dom->saveHTML($table);
         }
 
-        return $data;
-    }
-
-    private function clean(string $value): string
-    {
-        return trim(
-            preg_replace(
-                '/\s+/u',
-                ' ',
-                html_entity_decode(
-                    $value,
-                    ENT_QUOTES | ENT_HTML5,
-                    'UTF-8'
-                )
-            ) ?? ''
-        );
+        return $result;
     }
 }
