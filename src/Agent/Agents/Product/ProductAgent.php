@@ -7,9 +7,9 @@ namespace MyAIAgent\Agent\Agents\Product;
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
 use MyAIAgent\Agent\Agents\Product\Steps\CreateProductStep;
+use MyAIAgent\Agent\Agents\Product\Steps\GetProductOfficialStep;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\Steps\AskAiStep;
-use MyAIAgent\Agent\Steps\ValidateInputStep;
 use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
 use MyAIAgent\Agent\Agents\Product\Steps\BuildPromptStep;
 
@@ -19,7 +19,7 @@ final readonly class ProductAgent implements AgentInterface
 {
 
     public function __construct(
-        private ValidateInputStep     $validateInputStep,
+        private GetProductOfficialStep     $getProductOfficialStep,
         private BuildPromptStep       $buildPromptStep,
         private AskAiStep             $askAiStep,
         private ProcessAiResponseStep $processAiResponseStep,
@@ -42,8 +42,28 @@ final readonly class ProductAgent implements AgentInterface
     public function formSchema(): array
     {
         return [
-            'theme' => [
+            'reference' => [
                 'type' => 'text',
+                'required' => true,
+            ],
+            'technical_name' => [
+                'type' => 'text',
+                'required' => true,
+            ],
+            'family_name' => [
+                'type' => 'text',
+                'required' => true,
+            ],
+            'ean' => [
+                'type' => 'text',
+                'required' => true,
+            ],
+            'normal_price' => [
+                'type' => 'number',
+                'required' => true,
+            ],
+            'promotional_price' => [
+                'type' => 'number',
                 'required' => true,
             ],
             'language' => [
@@ -71,7 +91,7 @@ final readonly class ProductAgent implements AgentInterface
     public function steps(): array
     {
         return [
-            $this->validateInputStep,
+            $this->getProductOfficialStep,
             $this->buildPromptStep,
             $this->askAiStep,
             $this->processAiResponseStep,
@@ -87,13 +107,29 @@ final readonly class ProductAgent implements AgentInterface
      */
     public function validate(array $input): void
     {
-        if (
-            !isset($input['theme'])
-            || trim((string) $input['theme']) === ''
-        ) {
-            throw new InvalidArgumentException(
-                __('Le thème est obligatoire.', MY_AI_AGENT_DOMAIN)
-            );
+        $inputRequeried = [
+            'reference',
+            'technical_name',
+            'family_name',
+            'ean',
+            'language',
+            'tone',
+            'provider',
+            'prompt'
+        ];
+        foreach ($inputRequeried as $field) {
+            if (
+                !isset($input[$field])
+                || trim((string) $input[$field]) === ''
+            ) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        __('Le champ "%s" est obligatoire.', MY_AI_AGENT_DOMAIN),
+                        $field
+                    )
+                );
+            }
         }
+
     }
 }

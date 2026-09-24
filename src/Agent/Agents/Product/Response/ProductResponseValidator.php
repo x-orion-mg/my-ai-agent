@@ -21,7 +21,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
         $this->validateAttributes($data);
         $this->validateTechnicalSpecifications($data);
         $this->validateSeo($data['seo']);
-        $this->validateImage($data['image']);
+        //$this->validateImage($data['image']);
         $this->validateFaq($data['faq']);
         $this->validateSchema($data['schema']);
     }
@@ -38,7 +38,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
             'sku',
             'ean',
             'brand',
-            'productType',
+            //'productType',
             'category',
             'categories',
             'tags',
@@ -75,7 +75,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
         $this->assertNullableString($data, 'brand');
 
         $this->assertString($data, 'ean');
-        $this->assertNonEmptyString($data, 'productType');
+        //$this->assertNonEmptyString($data, 'productType');
         $this->assertNonEmptyString($data, 'category');
     }
 
@@ -275,7 +275,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
             }
         }
 
-        $this->assertNonEmptyString($image, 'prompt');
+        //$this->assertNonEmptyString($image, 'prompt');
         $this->assertNonEmptyString($image, 'alt');
     }
 

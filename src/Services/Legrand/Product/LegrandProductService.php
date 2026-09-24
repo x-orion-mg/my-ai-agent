@@ -49,8 +49,8 @@ final class LegrandProductService
          * 2. HTML PRODUIT
          * ======================================================
          */
-        $url = $this->legrandUrl->findLegrandProductPage($reference);
-        $html = $this->http->getEn($url);
+        $url_en = $this->legrandUrl->findLegrandProductPage($reference);
+        $html = $this->http->getEn($url_en);
 
         /*
          * ======================================================

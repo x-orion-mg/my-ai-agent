@@ -16,6 +16,7 @@ use MyAIAgent\Agent\Agents\Product\ProductAgent;
 use MyAIAgent\Agent\Agents\Product\Response\ProductResponseValidator;
 use MyAIAgent\Agent\Agents\Product\Steps\BuildPromptStep as ProductBuildPromptStep;
 use MyAIAgent\Agent\Agents\Product\Steps\CreateProductStep;
+use MyAIAgent\Agent\Agents\Product\Steps\GetProductOfficialStep;
 use MyAIAgent\Agent\Response\AiResponseParser;
 use MyAIAgent\Agent\Steps\AskAiStep;
 use MyAIAgent\Agent\Steps\ProcessAiResponseStep;
@@ -274,11 +275,15 @@ final class Plugin
                 $c->get(ProductResponseValidator::class),
             )
         );
+        $this->container->singleton(
+            GetProductOfficialStep::class,
+            static fn (Container $c): GetProductOfficialStep => new GetProductOfficialStep()
+        );
 
         $this->container->singleton(
             ProductAgent::class,
             static fn (Container $c): ProductAgent => new ProductAgent(
-                $c->get(ValidateInputStep::class),
+                $c->get(GetProductOfficialStep::class),
                 $c->get(ProductBuildPromptStep::class),
                 $c->get(AskAiStep::class),
                 $c->get('product.process_ai_response_step'),

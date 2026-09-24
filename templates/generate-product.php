@@ -27,7 +27,7 @@ use MyAIAgent\Prompt\Prompt;
     <div class="aips-agent-card">
 
         <div class="aips-agent-card__header">
-            <h2><?php esc_html_e('Générer un produit', MY_AI_AGENT_DOMAIN); ?></h2>
+            <h2><?php esc_html_e('Générer un produit Legrand', MY_AI_AGENT_DOMAIN); ?></h2>
             <p>
                 <?php esc_html_e(
                     'Configurez les paramètres de génération puis lancez votre agent IA.',
@@ -45,37 +45,106 @@ use MyAIAgent\Prompt\Prompt;
             <div class="aips-form-grid">
                 <input type="hidden" name="agent" value="<?php echo $slug; ?>">
 
-                <!-- Theme -->
-                <div class="aips-form-field aips-form-field--full">
-                    <label for="aips-product-theme">
-                        <?php esc_html_e('Thème du produit', MY_AI_AGENT_DOMAIN); ?>
+                <!-- Reference -->
+                <div class="aips-form-field">
+                    <label for="aips-product-reference">
+                        <?php esc_html_e('Référence', MY_AI_AGENT_DOMAIN); ?>
                         <span class="aips-required">*</span>
                     </label>
 
-                    <textarea
+                    <input
                         type="text"
-                        id="aips-product-theme"
-                        rows="6"
-                        name="theme"
+                        id="aips-product-reference"
+                        name="reference"
                         class="aips-input"
-                        placeholder="<?php esc_attr_e(
-                            '419134 RX3 DISJ 1P B10 6000A BIC. Disjoncteur de la gamme RX3. Référence 419134. EAN 3414970366665. Catégorie niveau 1 : Tableaux & Protection électrique, Catégorie niveau 2 : Disjoncteurs / Appareils de protection, Catégorie niveau 3 :Disjoncteurs modulaires',
-                            MY_AI_AGENT_DOMAIN
-                        ); ?>"
+                        value="419134"
+                        placeholder="<?php esc_attr_e('Entrez la référence du produit', MY_AI_AGENT_DOMAIN); ?>"
                         required
-                    >
-                        <?php esc_attr_e(
-                                '419134 RX3 DISJ 1P B10 6000A BIC. Disjoncteur de la gamme RX3. Référence 419134. EAN 3414970366665. Catégorie niveau 1 : Tableaux & Protection électrique, Catégorie niveau 2 : Disjoncteurs / Appareils de protection, Catégorie niveau 3 :Disjoncteurs modulaires',
-                                MY_AI_AGENT_DOMAIN
-                        ); ?>
-                    </textarea>
+                    />
+                </div>
 
-                    <p class="aips-form-help">
-                        <?php esc_html_e(
-                            'Décrivez le sujet principal du produit.',
-                            MY_AI_AGENT_DOMAIN
-                        ); ?>
-                    </p>
+                <!-- Nom technique -->
+                <div class="aips-form-field">
+                    <label for="aips-product-technical-name">
+                        <?php esc_html_e('Nom technique', MY_AI_AGENT_DOMAIN); ?>
+                        <span class="aips-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="aips-product-technical-name"
+                        name="technical_name"
+                        class="aips-input"
+                        value="RX3 DISJ 1P B10 6000A BIC"
+                        placeholder="<?php esc_attr_e('Entrez le nom technique du produit', MY_AI_AGENT_DOMAIN); ?>"
+                        required
+                    />
+                </div>
+
+                <!-- Nom famille -->
+                <div class="aips-form-field">
+                    <label for="aips-product-family-name">
+                        <?php esc_html_e('Nom famille', MY_AI_AGENT_DOMAIN); ?>
+                        <span class="aips-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="aips-product-family-name"
+                        name="family_name"
+                        class="aips-input"
+                        value="DISJONCTEURS RX3"
+                        placeholder="<?php esc_attr_e('Entrez le nom de la famille du produit', MY_AI_AGENT_DOMAIN); ?>"
+                        required
+                    />
+                </div>
+
+                <!-- EAN - Code bar -->
+                <div class="aips-form-field">
+                    <label for="aips-product-ean">
+                        <?php esc_html_e('Code EAN', MY_AI_AGENT_DOMAIN); ?>
+                        <span class="aips-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="aips-product-ean"
+                        name="ean"
+                        class="aips-input"
+                        value="3414970366634"
+                        placeholder="<?php esc_attr_e('Entrez l\'EAN du produit', MY_AI_AGENT_DOMAIN); ?>"
+                        required
+                    />
+                </div>
+
+                <!-- Prix normal -->
+                <div class="aips-form-field">
+                    <label for="aips-product-normal-price">
+                        <?php esc_html_e('Prix normal', MY_AI_AGENT_DOMAIN); ?>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="aips-product-normal-price"
+                        name="normal_price"
+                        class="aips-input"
+                        placeholder="<?php esc_attr_e('Entrez le prix normal du produit', MY_AI_AGENT_DOMAIN); ?>"
+                    />
+                </div>
+
+                <!-- Prix promotionnel -->
+                <div class="aips-form-field">
+                    <label for="aips-product-promotional-price">
+                        <?php esc_html_e('Prix promotionnel', MY_AI_AGENT_DOMAIN); ?>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="aips-product-promotional-price"
+                        name="promotional_price"
+                        class="aips-input"
+                        placeholder="<?php esc_attr_e('Entrez le prix promotionnel du produit', MY_AI_AGENT_DOMAIN); ?>"
+                    />
                 </div>
 
                 <!-- Language -->

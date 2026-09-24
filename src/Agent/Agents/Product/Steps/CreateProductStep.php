@@ -30,16 +30,16 @@ final class CreateProductStep implements AgentStepInterface
 
     public function execute(AgentContext $context): StepResult
     {
-        $product = $context->get('data');
+        $productData = $context->get('data');
+        $productInfo = $context->get('product');
 
-        if (!is_array($product)) {
-            return StepResult::failed(
-                'Les données du produit sont manquantes ou invalides.'
-            );
-        }
+        $product = array_merge($productData, [
+            'url' => $productInfo['url'] ?? '',
+            'image_url' => $productInfo['image'] ?? '',
+            'technicalData' => $productInfo['technicalData'] ?? '',
+        ]);
 
         $productName = $product['productName'] ?? null;
-        $shortDescription = $product['shortDescription'] ?? '';
         $description = $product['description'] ?? '';
 
         if (!is_string($productName) || trim($productName) === '') {
@@ -54,18 +54,24 @@ final class CreateProductStep implements AgentStepInterface
             );
         }
 
-        if (!is_string($shortDescription)) {
-            $shortDescription = '';
-        }
-
         try {
-            $productId = $this->productService->create($product);
+            $sku = $product['sku'] ?? null;
+            $product_id = wc_get_product_id_by_sku($sku);
+
+            if ($product_id) {
+               // update product
+                $message = __('Le produit a été modifié avec succès.', MY_AI_AGENT_DOMAIN);
+            } else {
+                $message = __('Le produit a été créé avec succès.', MY_AI_AGENT_DOMAIN);
+            }
+            $productId = $this->productService->createOrUpdate($product);
+
 
             $editUrl = get_edit_post_link($productId);
 
-            $message = sprintf(
+            $message .= sprintf(
                 __(
-                    'Le produit a été créé avec succès. <a href="%s" target="_blank">Modifier le produit</a>',
+                    '<a href="%s" target="_blank">Modifier le produit</a>',
                     MY_AI_AGENT_DOMAIN
                 ),
                 esc_url($editUrl)

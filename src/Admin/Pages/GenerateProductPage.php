@@ -18,12 +18,12 @@ final class GenerateProductPage extends AbstractPage
 
     public function title(): string
     {
-        return __('Générer un produit — My AI Agent', 'my-ai-agent');
+        return __('Générer un produit LEGRAND — My AI Agent', 'my-ai-agent');
     }
 
     public function menuTitle(): string
     {
-        return __('Générer produit', 'my-ai-agent');
+        return __('Générer produit LG', 'my-ai-agent');
     }
 
     public function render(): void

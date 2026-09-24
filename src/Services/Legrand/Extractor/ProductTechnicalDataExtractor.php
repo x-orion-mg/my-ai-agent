@@ -34,16 +34,14 @@ final class ProductTechnicalDataExtractor
         libxml_clear_errors();
 
         if (!$loaded) {
-            print_r("<br>ProductTechnicalDataExtractor: extract: loadHTML failed\n");
             return '';
         }
-print_r("<br>ProductTechnicalDataExtractor: extract: loadHTML success\n");
+
         $xpath = new DOMXPath($dom);
 
         $tables = $xpath->query('//table');
 
         if ($tables === false || $tables->length === 0) {
-            print_r("<br>ProductTechnicalDataExtractor: extract: no tables found\n");
             return '';
         }
 
