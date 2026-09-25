@@ -5,8 +5,37 @@
     var i18n = (MY_AI_AGENT && MY_AI_AGENT.i18n) || {};
 
     function post(action, data) {
-        return $.post(MY_AI_AGENT.ajaxUrl, $.extend({ action: action, nonce: MY_AI_AGENT.nonce }, data));
+
+        if (data instanceof FormData) {
+            if (!data.has('action')) {
+                data.append('action', action);
+            }
+
+            if (!data.has('nonce')) {
+                data.append('nonce', MY_AI_AGENT.nonce);
+            }
+
+            return $.ajax({
+                url: MY_AI_AGENT.ajaxUrl,
+                method: 'POST',
+                data: data,
+                processData: false,
+                contentType: false
+            });
+        }
+
+        return $.post(
+            MY_AI_AGENT.ajaxUrl,
+            $.extend(
+                {
+                    action: action,
+                    nonce: MY_AI_AGENT.nonce
+                },
+                data
+            )
+        );
     }
+
 
     /* ---------------------------------------------------------------------
      * Media picker (main image + gallery)
@@ -547,836 +576,360 @@
     /* ---------------------------------------------------------------------
  * AI Agents
  * ------------------------------------------------------------------- */
+    function initAgents() {
+
+        var $form = $('.aips-agent-form');
+
+        if (!$form.length) {
+            return;
+        }
 
 
+        var $result = $('.aips-agent-result');
 
-        function initAgents() {
-
-            var $form = $('.aips-agent-form');
-
-            if (!$form.length) {
-                return;
-            }
+        if (!$result.length) {
+            return;
+        }
 
 
-            var $result = $('.aips-agent-result');
+        /*
+         * =====================================================
+         * STATE
+         * =====================================================
+         *
+         * Toute l'information concernant l'exécution est
+         * centralisée ici.
+         */
 
-            if (!$result.length) {
-                return;
-            }
+        let state = {
 
+            executionId: null,
+
+            steps: [],
 
             /*
-             * =====================================================
-             * STATE
-             * =====================================================
+             * Index du step actuellement exécuté.
              *
-             * Toute l'information concernant l'exécution est
-             * centralisée ici.
-             */
-
-            let state = {
-
-                executionId: null,
-
-                steps: [],
-
-                /*
-                 * Index du step actuellement exécuté.
-                 *
-                 * Exemple :
-                 *
-                 * 0 = step 1
-                 * 1 = step 2
-                 * 2 = step 3
-                 */
-
-                currentStepIndex: null,
-
-                completedSteps: 0,
-
-                running: false,
-
-                waitingForHuman: false,
-
-                status: 'idle'
-
-            };
-
-
-            /*
-             * =====================================================
-             * HELPERS
-             * =====================================================
-             */
-
-            function escapeHtml(value) {
-
-                return $('<div>')
-                    .text(
-                        value == null
-                            ? ''
-                            : String(value)
-                    )
-                    .html();
-
-            }
-
-
-            function getStepStatusClass(status) {
-
-                switch (status) {
-
-                    case 'completed':
-                        return 'is-completed';
-
-                    case 'running':
-                        return 'is-running';
-
-                    case 'waiting':
-                    case 'waiting_human':
-                        return 'is-waiting';
-
-                    case 'failed':
-                        return 'is-failed';
-
-                    case 'pending':
-                    default:
-                        return 'is-pending';
-                }
-
-            }
-
-
-            function getStepIcon(status, index) {
-
-                switch (status) {
-
-                    case 'completed':
-                        return '✓';
-
-                    case 'running':
-                        return String(index + 1);
-
-                    case 'waiting':
-                    case 'waiting_human':
-                        return '!';
-
-                    case 'failed':
-                        return '×';
-
-                    case 'pending':
-                    default:
-                        return String(index + 1);
-                }
-
-            }
-
-
-            function getStepStatusLabel(status) {
-
-                switch (status) {
-
-                    case 'completed':
-                        return 'Terminé';
-
-                    case 'running':
-                        return 'En cours...';
-
-                    case 'waiting':
-                    case 'waiting_human':
-                        return 'Votre validation est requise';
-
-                    case 'failed':
-                        return 'Erreur';
-
-                    case 'pending':
-                    default:
-                        return 'En attente';
-                }
-
-            }
-
-
-            function getDefaultStepMessage(status) {
-
-                switch (status) {
-
-                    case 'completed':
-                        return 'Step exécuté.';
-
-                    case 'running':
-                        return 'Exécution du step en cours...';
-
-                    case 'waiting':
-                    case 'waiting_human':
-                        return 'Une validation est requise pour continuer.';
-
-                    case 'failed':
-                        return 'Une erreur est survenue pendant l’exécution.';
-
-                    case 'pending':
-                    default:
-                        return '';
-                }
-
-            }
-
-
-            function getErrorMessage(response, fallback) {
-
-                if (
-                    response &&
-                    response.data &&
-                    response.data.message
-                ) {
-                    return response.data.message;
-                }
-
-
-                if (
-                    response &&
-                    response.message
-                ) {
-                    return response.message;
-                }
-
-
-                return fallback;
-
-            }
-
-
-            /*
-             * =====================================================
-             * API
-             * =====================================================
+             * Exemple :
              *
-             * Aucun rendu DOM ici.
-             * Aucun changement de state ici.
-             * Cette partie s'occupe uniquement des AJAX.
+             * 0 = step 1
+             * 1 = step 2
+             * 2 = step 3
              */
 
-            var api = {
+            currentStepIndex: null,
 
-                createExecution: function (data) {
+            completedSteps: 0,
 
-                    return post(
-                        'my_ai_agent_create_execution',
-                        data
-                    );
+            running: false,
 
-                },
+            waitingForHuman: false,
 
+            status: 'idle'
 
-                runExecution: function (executionId) {
-
-                    return post(
-                        'my_ai_agent_run_execution',
-                        {
-                            execution_id: executionId
-                        }
-                    );
-
-                },
+        };
 
 
-                resumeExecution: function (
-                    executionId,
-                    approved
-                ) {
+        /*
+         * =====================================================
+         * HELPERS
+         * =====================================================
+         */
 
-                    return post(
-                        'my_ai_agent_resume_execution',
-                        {
-                            execution_id: executionId,
-                            approved: approved ? 1 : 0
-                        }
-                    );
+        function escapeHtml(value) {
 
-                }
+            return $('<div>')
+                .text(
+                    value == null
+                        ? ''
+                        : String(value)
+                )
+                .html();
 
-            };
+        }
+
+
+        function getStepStatusClass(status) {
+
+            switch (status) {
+
+                case 'completed':
+                    return 'is-completed';
+
+                case 'running':
+                    return 'is-running';
+
+                case 'waiting':
+                case 'waiting_human':
+                    return 'is-waiting';
+
+                case 'failed':
+                    return 'is-failed';
+
+                case 'pending':
+                default:
+                    return 'is-pending';
+            }
+
+        }
+
+
+        function getStepIcon(status, index) {
+
+            switch (status) {
+
+                case 'completed':
+                    return '✓';
+
+                case 'running':
+                    return String(index + 1);
+
+                case 'waiting':
+                case 'waiting_human':
+                    return '!';
+
+                case 'failed':
+                    return '×';
+
+                case 'pending':
+                default:
+                    return String(index + 1);
+            }
+
+        }
+
+
+        function getStepStatusLabel(status) {
+
+            switch (status) {
+
+                case 'completed':
+                    return 'Terminé';
+
+                case 'running':
+                    return 'En cours...';
+
+                case 'waiting':
+                case 'waiting_human':
+                    return 'Votre validation est requise';
+
+                case 'failed':
+                    return 'Erreur';
+
+                case 'pending':
+                default:
+                    return 'En attente';
+            }
+
+        }
+
+
+        function getDefaultStepMessage(status) {
+
+            switch (status) {
+
+                case 'completed':
+                    return 'Step exécuté.';
+
+                case 'running':
+                    return 'Exécution du step en cours...';
+
+                case 'waiting':
+                case 'waiting_human':
+                    return 'Une validation est requise pour continuer.';
+
+                case 'failed':
+                    return 'Une erreur est survenue pendant l’exécution.';
+
+                case 'pending':
+                default:
+                    return '';
+            }
+
+        }
+
+
+        function getErrorMessage(response, fallback) {
+
+            if (
+                response &&
+                response.data &&
+                response.data.message
+            ) {
+                return response.data.message;
+            }
+
+
+            if (
+                response &&
+                response.message
+            ) {
+                return response.message;
+            }
+
+
+            return fallback;
+
+        }
+
+
+        /*
+         * =====================================================
+         * API
+         * =====================================================
+         *
+         * Aucun rendu DOM ici.
+         * Aucun changement de state ici.
+         * Cette partie s'occupe uniquement des AJAX.
+         */
+
+        var api = {
+
+            createExecution: function (data) {
+
+                return post(
+                    'my_ai_agent_create_execution',
+                    data
+                );
+
+            },
+
+
+            runExecution: function (executionId) {
+
+                return post(
+                    'my_ai_agent_run_execution',
+                    {
+                        execution_id: executionId
+                    }
+                );
+
+            },
+
+
+            resumeExecution: function (
+                executionId,
+                approved
+            ) {
+
+                return post(
+                    'my_ai_agent_resume_execution',
+                    {
+                        execution_id: executionId,
+                        approved: approved ? 1 : 0
+                    }
+                );
+
+            }
+
+        };
+
+
+        /*
+         * =====================================================
+         * RENDERER
+         * =====================================================
+         *
+         * Cette partie est responsable uniquement de l'affichage.
+         */
+
+        var renderer = {
 
 
             /*
-             * =====================================================
-             * RENDERER
-             * =====================================================
-             *
-             * Cette partie est responsable uniquement de l'affichage.
+             * -------------------------------------------------
+             * FORM LOADING
+             * -------------------------------------------------
              */
 
-            var renderer = {
+            setFormLoading: function (loading) {
+
+                $form.toggleClass(
+                    'is-loading',
+                    loading
+                );
 
 
-                /*
-                 * -------------------------------------------------
-                 * FORM LOADING
-                 * -------------------------------------------------
-                 */
-
-                setFormLoading: function (loading) {
-
-                    $form.toggleClass(
-                        'is-loading',
+                $form
+                    .find('[type="submit"]')
+                    .prop(
+                        'disabled',
                         loading
                     );
 
-
-                    $form
-                        .find('[type="submit"]')
-                        .prop(
-                            'disabled',
-                            loading
-                        );
-
-                },
+            },
 
 
-                /*
-                 * -------------------------------------------------
-                 * CREATE LOADING
-                 * -------------------------------------------------
-                 *
-                 * À ce moment-là les steps ne sont PAS encore connus.
-                 */
+            /*
+             * -------------------------------------------------
+             * CREATE LOADING
+             * -------------------------------------------------
+             *
+             * À ce moment-là les steps ne sont PAS encore connus.
+             */
 
-                showCreationLoading: function () {
+            showCreationLoading: function () {
+
+                $result.html(
+                    '<div class="aips-agent-result__loading">' +
+                    'Création de l’exécution…' +
+                    '</div>'
+                );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * RENDER EXECUTION
+             * -------------------------------------------------
+             *
+             * Appelé uniquement après CREATE.
+             *
+             * À ce moment-là nous connaissons les steps.
+             */
+
+            renderExecution: function () {
+
+                if (!state.steps.length) {
 
                     $result.html(
-                        '<div class="aips-agent-result__loading">' +
-                        'Création de l’exécution…' +
+                        '<div class="aips-agent-result__empty">' +
+                        'Aucune étape disponible.' +
                         '</div>'
                     );
 
-                },
+                    return;
+                }
+
+
+                var html = '';
+
+
+                html += '<div class="aips-agent-result__execution">';
 
 
                 /*
                  * -------------------------------------------------
-                 * RENDER EXECUTION
-                 * -------------------------------------------------
-                 *
-                 * Appelé uniquement après CREATE.
-                 *
-                 * À ce moment-là nous connaissons les steps.
-                 */
-
-                renderExecution: function () {
-
-                    if (!state.steps.length) {
-
-                        $result.html(
-                            '<div class="aips-agent-result__empty">' +
-                            'Aucune étape disponible.' +
-                            '</div>'
-                        );
-
-                        return;
-                    }
-
-
-                    var html = '';
-
-
-                    html += '<div class="aips-agent-result__execution">';
-
-
-                    /*
-                     * -------------------------------------------------
-                     * HEADER
-                     * -------------------------------------------------
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__header">';
-
-                    html +=
-                        '<h3 class="aips-agent-result__title">' +
-                        'Exécution de l\'Agent' +
-                        '</h3>';
-
-                    html +=
-                        '<p class="aips-agent-result__subtitle">' +
-                        'L\'Agent traite votre demande' +
-                        '</p>';
-
-                    html +=
-                        '</div>';
-
-
-                    /*
-                     * -------------------------------------------------
-                     * PROGRESS
-                     * -------------------------------------------------
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__progress">';
-
-                    html +=
-                        '<div class="aips-agent-result__progress-header">';
-
-                    html +=
-                        '<span class="aips-agent-result__progress-label">' +
-                        'Progression' +
-                        '</span>';
-
-                    html +=
-                        '<span class="aips-agent-result__progress-value">' +
-                        '0 / ' +
-                        state.steps.length +
-                        '</span>';
-
-                    html +=
-                        '</div>';
-
-
-                    html +=
-                        '<div class="aips-agent-result__progress-bar">';
-
-                    html +=
-                        '<div ' +
-                        'class="aips-agent-result__progress-fill" ' +
-                        'style="width: 0%;"' +
-                        '></div>';
-
-                    html +=
-                        '</div>';
-
-                    html +=
-                        '</div>';
-
-
-                    /*
-                     * -------------------------------------------------
-                     * STEPS
-                     * -------------------------------------------------
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__steps">';
-
-
-                    state.steps.forEach(
-                        function (step, index) {
-
-                            html +=
-                                renderer.renderStep(
-                                    step,
-                                    index,
-                                    'pending'
-                                );
-
-                        }
-                    );
-
-
-                    html +=
-                        '</div>';
-
-
-                    /*
-                     * -------------------------------------------------
-                     * FINAL AREA
-                     * -------------------------------------------------
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__final"></div>';
-
-
-                    html +=
-                        '</div>';
-
-
-                    $result.html(html);
-
-                },
-
-
-                /*
-                 * -------------------------------------------------
-                 * RENDER ONE STEP
+                 * HEADER
                  * -------------------------------------------------
                  */
 
-                renderStep: function (
-                    step,
-                    index,
-                    status
-                ) {
-
-                    var statusClass =
-                        getStepStatusClass(status);
-
-                    var icon =
-                        getStepIcon(
-                            status,
-                            index
-                        );
-
-                    var statusLabel =
-                        getStepStatusLabel(status);
-
-                    var message =
-                        getDefaultStepMessage(status);
-
-
-                    var html = '';
-
-
-                    html +=
-                        '<div ' +
-                        'class="aips-agent-result__step ' +
-                        statusClass + '" ' +
-                        'data-step-index="' +
-                        index +
-                        '" ' +
-                        'data-step-id="' +
-                        escapeHtml(step.id) +
-                        '"' +
-                        '>';
-
-
-                    /*
-                     * ICON
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__step-icon">' +
-                        icon +
-                        '</div>';
-
-
-                    /*
-                     * CONTENT
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__step-content">';
-
-
-                    /*
-                     * HEADER
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__step-header">';
-
-
-                    html +=
-                        '<div class="aips-agent-result__step-label">' +
-                        escapeHtml(step.label) +
-                        '</div>';
-
-
-                    html +=
-                        '<div class="aips-agent-result__step-status">' +
-                        statusLabel +
-                        '</div>';
-
-
-                    html +=
-                        '</div>';
-
-
-                    /*
-                     * MESSAGE
-                     */
-
-                    if (message) {
-
-                        html +=
-                            '<div class="aips-agent-result__step-message">' +
-                            escapeHtml(message) +
-                            '</div>';
-
-                    }
-
-
-                    /*
-                     * RESULT
-                     */
-
-                    html +=
-                        '<div class="aips-agent-result__step-result"></div>';
-
-
-                    html +=
-                        '</div>';
-
-
-                    html +=
-                        '</div>';
-
-
-                    return html;
-
-                },
-
-
-                /*
-                 * -------------------------------------------------
-                 * UPDATE ONE STEP
-                 * -------------------------------------------------
-                 */
-
-                updateStep: function (
-                    index,
-                    status,
-                    result,
-                    message
-                ) {
-
-                    var $step =
-                        $result.find(
-                            '.aips-agent-result__step[data-step-index="' +
-                            index +
-                            '"]'
-                        );
-
-
-                    if (!$step.length) {
-                        return;
-                    }
-
-
-                    var step =
-                        state.steps[index];
-
-
-                    /*
-                     * Classes
-                     */
-
-                    $step.removeClass(
-                        'is-pending ' +
-                        'is-running ' +
-                        'is-completed ' +
-                        'is-waiting ' +
-                        'is-failed'
-                    );
-
-
-                    $step.addClass(
-                        getStepStatusClass(status)
-                    );
-
-
-                    /*
-                     * Icon
-                     */
-
-                    $step
-                        .find(
-                            '.aips-agent-result__step-icon'
-                        )
-                        .text(
-                            getStepIcon(
-                                status,
-                                index
-                            )
-                        );
-
-
-                    /*
-                     * Status
-                     */
-
-                    $step
-                        .find(
-                            '.aips-agent-result__step-status'
-                        )
-                        .text(
-                            getStepStatusLabel(status)
-                        );
-
-
-                    /*
-                     * Message
-                     */
-
-                    var finalMessage =
-                        message ||
-                        getDefaultStepMessage(status);
-
-
-                    var $message =
-                        $step.find(
-                            '.aips-agent-result__step-message'
-                        );
-
-
-                    if (finalMessage) {
-
-                        if ($message.length) {
-
-                            $message.text(
-                                finalMessage
-                            );
-
-                        } else {
-
-                            $step
-                                .find(
-                                    '.aips-agent-result__step-header'
-                                )
-                                .after(
-                                    '<div class="aips-agent-result__step-message">' +
-                                    escapeHtml(finalMessage) +
-                                    '</div>'
-                                );
-
-                        }
-
-                    } else {
-
-                        $message.remove();
-
-                    }
-
-
-                    /*
-                     * Result
-                     */
-
-                    if (
-                        result !== undefined &&
-                        result !== null
-                    ) {
-
-                        renderer.renderStepResult(
-                            $step.find(
-                                '.aips-agent-result__step-result'
-                            ),
-                            result
-                        );
-
-                    }
-
-
-                    /*
-                     * Si c'est un step waiting,
-                     * on peut afficher la validation.
-                     */
-
-                    if (
-                        status === 'waiting' ||
-                        status === 'waiting_human'
-                    ) {
-
-                        renderer.renderHumanValidation(
-                            $step
-                        );
-
-                    }
-
-                },
-
-
-                /*
-                 * -------------------------------------------------
-                 * STEP RESULT
-                 * -------------------------------------------------
-                 */
-
-                renderStepResult: function (
-                    $container,
-                    result
-                ) {
-
-                    if (!$container.length) {
-                        return;
-                    }
-
-
-                    /*
-                     * Valeur simple
-                     */
-
-                    if (
-                        typeof result !== 'object' ||
-                        result === null
-                    ) {
-
-                        if (
-                            result !== ''
-                        ) {
-
-                            $container.html(
-                                '<div class="aips-agent-result__result-text">' +
-                                escapeHtml(result) +
-                                '</div>'
-                            );
-
-                        }
-
-                        return;
-
-                    }
-
-
-                    var html = '';
-
-
-
-                    /*
-                     * MESSAGE
-                     */
-
-                    if (result.message) {
-
-                        html +=
-                            '<div class="aips-agent-result__result-block">';
-
-                        html +=
-                            '<div class="aips-agent-result__result-label">' +
-                            'Resultat du traitement' +
-                            '</div>';
-
-                        html +=
-                            '<div class="aips-agent-result__result-pre">' +
-                            result.message +
-                            '</div>';
-
-                        html +=
-                            '</div>';
-
-                    }
-
-                    /*
-                     * GENERIC RESULT
-                     */
-
-                    if (!html) {
-                        const resultToDisplay = { ...result };
-
-                        delete resultToDisplay.message;
-                        html +=
-                            '<div class="aips-agent-result__result-block">';
-
-                        html +=
-                            '<pre class="aips-agent-result__result-pre">' +
-                            escapeHtml(
-                                JSON.stringify(
-                                    resultToDisplay,
-                                    null,
-                                    2
-                                )
-                            ) +
-                            '</pre>';
-
-                        html +=
-                            '</div>';
-
-                    }
-
-
-                    $container.html(html);
-
-                },
+                html +=
+                    '<div class="aips-agent-result__header">';
+
+                html +=
+                    '<h3 class="aips-agent-result__title">' +
+                    'Exécution de l\'Agent' +
+                    '</h3>';
+
+                html +=
+                    '<p class="aips-agent-result__subtitle">' +
+                    'L\'Agent traite votre demande' +
+                    '</p>';
+
+                html +=
+                    '</div>';
 
 
                 /*
@@ -1385,1291 +938,1723 @@
                  * -------------------------------------------------
                  */
 
-                updateProgress: function () {
+                html +=
+                    '<div class="aips-agent-result__progress">';
 
-                    var total =
-                        state.steps.length;
+                html +=
+                    '<div class="aips-agent-result__progress-header">';
 
+                html +=
+                    '<span class="aips-agent-result__progress-label">' +
+                    'Progression' +
+                    '</span>';
 
-                    if (!total) {
-                        return;
-                    }
+                html +=
+                    '<span class="aips-agent-result__progress-value">' +
+                    '0 / ' +
+                    state.steps.length +
+                    '</span>';
 
-
-                    var completed =
-                        state.completedSteps;
-
-
-                    if (completed < 0) {
-                        completed = 0;
-                    }
-
-
-                    if (completed > total) {
-                        completed = total;
-                    }
+                html +=
+                    '</div>';
 
 
-                    var percentage =
-                        Math.round(
-                            (completed / total) * 100
-                        );
+                html +=
+                    '<div class="aips-agent-result__progress-bar">';
 
+                html +=
+                    '<div ' +
+                    'class="aips-agent-result__progress-fill" ' +
+                    'style="width: 0%;"' +
+                    '></div>';
 
-                    $result
-                        .find(
-                            '.aips-agent-result__progress-value'
-                        )
-                        .text(
-                            completed +
-                            ' / ' +
-                            total
-                        );
+                html +=
+                    '</div>';
 
-
-                    $result
-                        .find(
-                            '.aips-agent-result__progress-fill'
-                        )
-                        .css(
-                            'width',
-                            percentage + '%'
-                        );
-
-                },
+                html +=
+                    '</div>';
 
 
                 /*
                  * -------------------------------------------------
-                 * HUMAN VALIDATION
+                 * STEPS
                  * -------------------------------------------------
                  */
 
-                renderHumanValidation: function ($step) {
-
-                    var $container =
-                        $step.find(
-                            '.aips-agent-result__step-result'
-                        );
+                html +=
+                    '<div class="aips-agent-result__steps">';
 
 
-                    $container.html(
+                state.steps.forEach(
+                    function (step, index) {
 
-                        '<div class="aips-agent-result__validation">' +
+                        html +=
+                            renderer.renderStep(
+                                step,
+                                index,
+                                'pending'
+                            );
 
-                        '<h4 class="aips-agent-result__validation-title">' +
-                        'Validation nécessaire' +
-                        '</h4>' +
+                    }
+                );
 
-                        '<p class="aips-agent-result__validation-message">' +
-                        'Vérifiez le contenu avant de continuer.' +
-                        '</p>' +
 
-                        '<div class="aips-agent-result__validation-actions">' +
+                html +=
+                    '</div>';
 
-                        '<button ' +
-                        'type="button" ' +
-                        'class="button button-primary aips-validate-execution">' +
-                        'Valider' +
-                        '</button>' +
 
-                        '<button ' +
-                        'type="button" ' +
-                        'class="button aips-reject-execution">' +
-                        'Modifier' +
-                        '</button>' +
+                /*
+                 * -------------------------------------------------
+                 * FINAL AREA
+                 * -------------------------------------------------
+                 */
 
-                        '</div>' +
+                html +=
+                    '<div class="aips-agent-result__final"></div>';
 
-                        '</div>'
 
+                html +=
+                    '</div>';
+
+
+                $result.html(html);
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * RENDER ONE STEP
+             * -------------------------------------------------
+             */
+
+            renderStep: function (
+                step,
+                index,
+                status
+            ) {
+
+                var statusClass =
+                    getStepStatusClass(status);
+
+                var icon =
+                    getStepIcon(
+                        status,
+                        index
                     );
 
-                },
+                var statusLabel =
+                    getStepStatusLabel(status);
+
+                var message =
+                    getDefaultStepMessage(status);
+
+
+                var html = '';
+
+
+                html +=
+                    '<div ' +
+                    'class="aips-agent-result__step ' +
+                    statusClass + '" ' +
+                    'data-step-index="' +
+                    index +
+                    '" ' +
+                    'data-step-id="' +
+                    escapeHtml(step.id) +
+                    '"' +
+                    '>';
 
 
                 /*
-                 * -------------------------------------------------
-                 * VALIDATION LOADING
-                 * -------------------------------------------------
+                 * ICON
                  */
 
-                showValidationLoading: function ($step) {
-
-                    $step
-                        .find(
-                            '.aips-agent-result__step-result'
-                        )
-                        .html(
-                            '<div class="aips-agent-result__validation-loading">' +
-                            'Validation en cours…' +
-                            '</div>'
-                        );
-
-                },
+                html +=
+                    '<div class="aips-agent-result__step-icon">' +
+                    icon +
+                    '</div>';
 
 
                 /*
-                 * -------------------------------------------------
-                 * FINAL RESULT
-                 * -------------------------------------------------
+                 * CONTENT
                  */
 
-                showFinalResult: function (result) {
-
-                    var $final =
-                        $result.find(
-                            '.aips-agent-result__final'
-                        );
-
-
-                    if (!$final.length) {
-                        return;
-                    }
-
-
-                    var html = '';
-
-
-                    html +=
-                        '<div class="aips-agent-result__final-result">';
-
-
-                    html +=
-                        '<div class="aips-agent-result__final-title">' +
-                        '✓ Exécution terminée avec succès' +
-                        '</div>';
-
-
-                    /*
-                     * Titre éventuel
-                     */
-
-                    if (
-                        result &&
-                        (
-                            result.postTitle ||
-                            result.title
-                        )
-                    ) {
-
-                        html +=
-                            '<div class="aips-agent-result__final-title-value">' +
-                            escapeHtml(
-                                result.postTitle ||
-                                result.title
-                            ) +
-                            '</div>';
-
-                    }
-
-
-                    /*
-                     * Excerpt éventuel
-                     */
-
-                    if (
-                        result &&
-                        result.excerpt
-                    ) {
-
-                        html +=
-                            '<div class="aips-agent-result__final-excerpt">' +
-                            escapeHtml(
-                                result.excerpt
-                            ) +
-                            '</div>';
-
-                    }
-
-
-                    /*
-                     * Debug
-                     */
-
-                    if (result) {
-
-                        html +=
-                            '<details class="aips-agent-result__final-details">';
-
-                        html +=
-                            '<summary>' +
-                            'Voir les données complètes' +
-                            '</summary>';
-
-                        html +=
-                            '<pre class="aips-agent-result__result-pre">' +
-                            escapeHtml(
-                                JSON.stringify(
-                                    result,
-                                    null,
-                                    2
-                                )
-                            ) +
-                            '</pre>';
-
-                        html +=
-                            '</details>';
-
-                    }
-
-
-                    html +=
-                        '</div>';
-
-
-                    $final.html(html);
-
-                },
+                html +=
+                    '<div class="aips-agent-result__step-content">';
 
 
                 /*
-                 * -------------------------------------------------
-                 * EXECUTION ERROR
-                 * -------------------------------------------------
+                 * HEADER
                  */
 
-                showExecutionError: function (message) {
-
-                    var $final =
-                        $result.find(
-                            '.aips-agent-result__final'
-                        );
+                html +=
+                    '<div class="aips-agent-result__step-header">';
 
 
-                    $final.html(
+                html +=
+                    '<div class="aips-agent-result__step-label">' +
+                    escapeHtml(step.label) +
+                    '</div>';
 
-                        '<div class="aips-agent-result__error">' +
 
-                        '<div class="aips-agent-result__error-title">' +
-                        '✕ L\'exécution a échoué' +
-                        '</div>' +
+                html +=
+                    '<div class="aips-agent-result__step-status">' +
+                    statusLabel +
+                    '</div>';
 
-                        '<div class="aips-agent-result__error-message">' +
+
+                html +=
+                    '</div>';
+
+
+                /*
+                 * MESSAGE
+                 */
+
+                if (message) {
+
+                    html +=
+                        '<div class="aips-agent-result__step-message">' +
                         escapeHtml(message) +
-                        '</div>' +
+                        '</div>';
 
-                        '</div>'
+                }
 
+
+                /*
+                 * RESULT
+                 */
+
+                html +=
+                    '<div class="aips-agent-result__step-result"></div>';
+
+
+                html +=
+                    '</div>';
+
+
+                html +=
+                    '</div>';
+
+
+                return html;
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * UPDATE ONE STEP
+             * -------------------------------------------------
+             */
+
+            updateStep: function (
+                index,
+                status,
+                result,
+                message
+            ) {
+
+                var $step =
+                    $result.find(
+                        '.aips-agent-result__step[data-step-index="' +
+                        index +
+                        '"]'
+                    );
+
+
+                if (!$step.length) {
+                    return;
+                }
+
+
+                var step =
+                    state.steps[index];
+
+
+                /*
+                 * Classes
+                 */
+
+                $step.removeClass(
+                    'is-pending ' +
+                    'is-running ' +
+                    'is-completed ' +
+                    'is-waiting ' +
+                    'is-failed'
+                );
+
+
+                $step.addClass(
+                    getStepStatusClass(status)
+                );
+
+
+                /*
+                 * Icon
+                 */
+
+                $step
+                    .find(
+                        '.aips-agent-result__step-icon'
+                    )
+                    .text(
+                        getStepIcon(
+                            status,
+                            index
+                        )
+                    );
+
+
+                /*
+                 * Status
+                 */
+
+                $step
+                    .find(
+                        '.aips-agent-result__step-status'
+                    )
+                    .text(
+                        getStepStatusLabel(status)
+                    );
+
+
+                /*
+                 * Message
+                 */
+
+                var finalMessage =
+                    message ||
+                    getDefaultStepMessage(status);
+
+
+                var $message =
+                    $step.find(
+                        '.aips-agent-result__step-message'
+                    );
+
+
+                if (finalMessage) {
+
+                    if ($message.length) {
+
+                        $message.text(
+                            finalMessage
+                        );
+
+                    } else {
+
+                        $step
+                            .find(
+                                '.aips-agent-result__step-header'
+                            )
+                            .after(
+                                '<div class="aips-agent-result__step-message">' +
+                                escapeHtml(finalMessage) +
+                                '</div>'
+                            );
+
+                    }
+
+                } else {
+
+                    $message.remove();
+
+                }
+
+
+                /*
+                 * Result
+                 */
+
+                if (
+                    result !== undefined &&
+                    result !== null
+                ) {
+
+                    renderer.renderStepResult(
+                        $step.find(
+                            '.aips-agent-result__step-result'
+                        ),
+                        result
                     );
 
                 }
 
-            };
+
+                /*
+                 * Si c'est un step waiting,
+                 * on peut afficher la validation.
+                 */
+
+                if (
+                    status === 'waiting' ||
+                    status === 'waiting_human'
+                ) {
+
+                    renderer.renderHumanValidation(
+                        $step
+                    );
+
+                }
+
+            },
 
 
             /*
-             * =====================================================
-             * EXECUTION
-             * =====================================================
-             *
-             * Toute la logique de l'Agent se trouve ici.
+             * -------------------------------------------------
+             * STEP RESULT
+             * -------------------------------------------------
              */
 
-            var execution = {
+            renderStepResult: function (
+                $container,
+                result
+            ) {
+
+                if (!$container.length) {
+                    return;
+                }
 
 
                 /*
-                 * -------------------------------------------------
-                 * RESET
-                 * -------------------------------------------------
+                 * Valeur simple
                  */
 
-                reset: function () {
+                if (
+                    typeof result !== 'object' ||
+                    result === null
+                ) {
 
-                    state.executionId = null;
+                    if (
+                        result !== ''
+                    ) {
 
-                    state.steps = [];
+                        $container.html(
+                            '<div class="aips-agent-result__result-text">' +
+                            escapeHtml(result) +
+                            '</div>'
+                        );
 
-                    state.currentStepIndex = null;
+                    }
 
-                    state.completedSteps = 0;
+                    return;
 
-                    state.running = false;
+                }
 
-                    state.waitingForHuman = false;
 
-                    state.status = 'idle';
+                var html = '';
 
-                },
 
 
                 /*
-                 * -------------------------------------------------
-                 * CREATE
-                 * -------------------------------------------------
+                 * MESSAGE
                  */
 
-                create: function (input) {
+                if (result.message) {
 
-                    this.reset();
+                    html +=
+                        '<div class="aips-agent-result__result-block">';
+
+                    html +=
+                        '<div class="aips-agent-result__result-label">' +
+                        'Resultat du traitement' +
+                        '</div>';
+
+                    html +=
+                        '<div class="aips-agent-result__result-pre">' +
+                        result.message +
+                        '</div>';
+
+                    html +=
+                        '</div>';
+
+                }
+
+                /*
+                 * GENERIC RESULT
+                 */
+
+                if (!html) {
+                    const resultToDisplay = { ...result };
+
+                    delete resultToDisplay.message;
+                    html +=
+                        '<div class="aips-agent-result__result-block">';
+
+                    html +=
+                        '<pre class="aips-agent-result__result-pre">' +
+                        escapeHtml(
+                            JSON.stringify(
+                                resultToDisplay,
+                                null,
+                                2
+                            )
+                        ) +
+                        '</pre>';
+
+                    html +=
+                        '</div>';
+
+                }
 
 
-                    state.status =
-                        'creating';
+                $container.html(html);
+
+            },
 
 
-                    renderer.setFormLoading(
-                        true
+            /*
+             * -------------------------------------------------
+             * PROGRESS
+             * -------------------------------------------------
+             */
+
+            updateProgress: function () {
+
+                var total =
+                    state.steps.length;
+
+
+                if (!total) {
+                    return;
+                }
+
+
+                var completed =
+                    state.completedSteps;
+
+
+                if (completed < 0) {
+                    completed = 0;
+                }
+
+
+                if (completed > total) {
+                    completed = total;
+                }
+
+
+                var percentage =
+                    Math.round(
+                        (completed / total) * 100
                     );
 
 
-                    renderer.showCreationLoading();
+                $result
+                    .find(
+                        '.aips-agent-result__progress-value'
+                    )
+                    .text(
+                        completed +
+                        ' / ' +
+                        total
+                    );
 
 
-                    api
-                        .createExecution(input)
+                $result
+                    .find(
+                        '.aips-agent-result__progress-fill'
+                    )
+                    .css(
+                        'width',
+                        percentage + '%'
+                    );
 
-                        .done(
-                            function (response) {
-
-                                console.log(
-                                    '[AIPS] CREATE response:',
-                                    response
-                                );
-
-
-                                if (
-                                    !response ||
-                                    !response.success
-                                ) {
-
-                                    execution.handleError(
-                                        getErrorMessage(
-                                            response,
-                                            'Impossible de créer l’exécution.'
-                                        )
-                                    );
-
-                                    return;
-                                }
+            },
 
 
-                                var data =
-                                    response.data || {};
+            /*
+             * -------------------------------------------------
+             * HUMAN VALIDATION
+             * -------------------------------------------------
+             */
+
+            renderHumanValidation: function ($step) {
+
+                var $container =
+                    $step.find(
+                        '.aips-agent-result__step-result'
+                    );
 
 
-                                /*
-                                 * -------------------------------------
-                                 * EXECUTION ID
-                                 * -------------------------------------
-                                 */
+                $container.html(
 
-                                state.executionId =
-                                    data.execution_id ||
-                                    (
-                                        data.execution &&
-                                        data.execution.id
-                                    );
+                    '<div class="aips-agent-result__validation">' +
 
+                    '<h4 class="aips-agent-result__validation-title">' +
+                    'Validation nécessaire' +
+                    '</h4>' +
 
-                                /*
-                                 * -------------------------------------
-                                 * STEPS
-                                 * -------------------------------------
-                                 *
-                                 * Ici seulement les steps deviennent
-                                 * connus.
-                                 */
+                    '<p class="aips-agent-result__validation-message">' +
+                    'Vérifiez le contenu avant de continuer.' +
+                    '</p>' +
 
-                                state.steps =
-                                    data.steps ||
-                                    (
-                                        data.execution &&
-                                        data.execution.steps
-                                    ) ||
-                                    [];
+                    '<div class="aips-agent-result__validation-actions">' +
 
+                    '<button ' +
+                    'type="button" ' +
+                    'class="button button-primary aips-validate-execution">' +
+                    'Valider' +
+                    '</button>' +
 
-                                /*
-                                 * -------------------------------------
-                                 * VALIDATION
-                                 * -------------------------------------
-                                 */
+                    '<button ' +
+                    'type="button" ' +
+                    'class="button aips-reject-execution">' +
+                    'Modifier' +
+                    '</button>' +
 
-                                if (
-                                    !state.executionId
-                                ) {
+                    '</div>' +
 
-                                    execution.handleError(
-                                        'L’identifiant de l’exécution est manquant.'
-                                    );
+                    '</div>'
 
-                                    return;
-                                }
+                );
+
+            },
 
 
-                                if (
-                                    !state.steps.length
-                                ) {
+            /*
+             * -------------------------------------------------
+             * VALIDATION LOADING
+             * -------------------------------------------------
+             */
 
-                                    execution.handleError(
-                                        'Aucune étape n’a été retournée par le serveur.'
-                                    );
+            showValidationLoading: function ($step) {
 
-                                    return;
-                                }
+                $step
+                    .find(
+                        '.aips-agent-result__step-result'
+                    )
+                    .html(
+                        '<div class="aips-agent-result__validation-loading">' +
+                        'Validation en cours…' +
+                        '</div>'
+                    );
 
-
-                                /*
-                                 * -------------------------------------
-                                 * STATE INITIAL
-                                 * -------------------------------------
-                                 */
-
-                                state.currentStepIndex =
-                                    null;
-
-                                state.completedSteps =
-                                    0;
-
-                                state.status =
-                                    'ready';
+            },
 
 
-                                /*
-                                 * -------------------------------------
-                                 * RENDER
-                                 * -------------------------------------
-                                 */
+            /*
+             * -------------------------------------------------
+             * FINAL RESULT
+             * -------------------------------------------------
+             */
 
-                                renderer.renderExecution();
+            showFinalResult: function (result) {
 
-                                renderer.updateProgress();
-
-
-                                /*
-                                 * -------------------------------------
-                                 * RUN PREMIER STEP
-                                 * -------------------------------------
-                                 */
-
-                                setTimeout(
-                                    function () {
-
-                                        execution.run();
-
-                                    },
-                                    150
-                                );
-
-                            }
-                        )
-
-                        .fail(
-                            function (xhr) {
-
-                                console.error(
-                                    '[AIPS] CREATE AJAX error:',
-                                    xhr
-                                );
+                var $final =
+                    $result.find(
+                        '.aips-agent-result__final'
+                    );
 
 
-                                execution.handleError(
-                                    'Une erreur est survenue lors de la création de l’exécution.'
-                                );
+                if (!$final.length) {
+                    return;
+                }
 
-                            }
-                        );
 
-                },
+                var html = '';
+
+
+                html +=
+                    '<div class="aips-agent-result__final-result">';
+
+
+                html +=
+                    '<div class="aips-agent-result__final-title">' +
+                    '✓ Exécution terminée avec succès' +
+                    '</div>';
 
 
                 /*
-                 * -------------------------------------------------
-                 * FIND NEXT STEP
-                 * -------------------------------------------------
-                 *
-                 * IMPORTANT :
-                 *
-                 * On utilise le STATE et non le DOM.
+                 * Titre éventuel
                  */
 
-                getNextStepIndex: function () {
+                if (
+                    result &&
+                    (
+                        result.postTitle ||
+                        result.title
+                    )
+                ) {
 
-                    /*
-                     * Aucun step
-                     */
+                    html +=
+                        '<div class="aips-agent-result__final-title-value">' +
+                        escapeHtml(
+                            result.postTitle ||
+                            result.title
+                        ) +
+                        '</div>';
 
-                    if (
-                        !state.steps.length
-                    ) {
-
-                        return null;
-
-                    }
-
-
-                    /*
-                     * Si un step est explicitement courant,
-                     * on continue avec lui.
-                     */
-
-                    if (
-                        state.currentStepIndex !== null
-                    ) {
-
-                        return state.currentStepIndex;
-
-                    }
+                }
 
 
-                    /*
-                     * Sinon on cherche le premier step
-                     * non terminé.
-                     */
+                /*
+                 * Excerpt éventuel
+                 */
 
-                    for (
-                        var i = 0;
-                        i < state.steps.length;
-                        i++
-                    ) {
+                if (
+                    result &&
+                    result.excerpt
+                ) {
 
-                        var $step =
-                            $result.find(
-                                '.aips-agent-result__step[data-step-index="' +
-                                i +
-                                '"]'
+                    html +=
+                        '<div class="aips-agent-result__final-excerpt">' +
+                        escapeHtml(
+                            result.excerpt
+                        ) +
+                        '</div>';
+
+                }
+
+
+                /*
+                 * Debug
+                 */
+
+                if (result) {
+
+                    html +=
+                        '<details class="aips-agent-result__final-details">';
+
+                    html +=
+                        '<summary>' +
+                        'Voir les données complètes' +
+                        '</summary>';
+
+                    html +=
+                        '<pre class="aips-agent-result__result-pre">' +
+                        escapeHtml(
+                            JSON.stringify(
+                                result,
+                                null,
+                                2
+                            )
+                        ) +
+                        '</pre>';
+
+                    html +=
+                        '</details>';
+
+                }
+
+
+                html +=
+                    '</div>';
+
+
+                $final.html(html);
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * EXECUTION ERROR
+             * -------------------------------------------------
+             */
+
+            showExecutionError: function (message) {
+
+                var $final =
+                    $result.find(
+                        '.aips-agent-result__final'
+                    );
+
+
+                $final.html(
+
+                    '<div class="aips-agent-result__error">' +
+
+                    '<div class="aips-agent-result__error-title">' +
+                    '✕ L\'exécution a échoué' +
+                    '</div>' +
+
+                    '<div class="aips-agent-result__error-message">' +
+                    escapeHtml(message) +
+                    '</div>' +
+
+                    '</div>'
+
+                );
+
+            }
+
+        };
+
+
+        /*
+         * =====================================================
+         * EXECUTION
+         * =====================================================
+         *
+         * Toute la logique de l'Agent se trouve ici.
+         */
+
+        var execution = {
+
+
+            /*
+             * -------------------------------------------------
+             * RESET
+             * -------------------------------------------------
+             */
+
+            reset: function () {
+
+                state.executionId = null;
+
+                state.steps = [];
+
+                state.currentStepIndex = null;
+
+                state.completedSteps = 0;
+
+                state.running = false;
+
+                state.waitingForHuman = false;
+
+                state.status = 'idle';
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * CREATE
+             * -------------------------------------------------
+             */
+
+            create: function (input) {
+
+                this.reset();
+
+
+                state.status =
+                    'creating';
+
+
+                renderer.setFormLoading(
+                    true
+                );
+
+
+                renderer.showCreationLoading();
+
+
+                api
+                    .createExecution(input)
+
+                    .done(
+                        function (response) {
+
+                            console.log(
+                                '[AIPS] CREATE response:',
+                                response
                             );
 
 
-                        if (
-                            !$step.hasClass(
-                                'is-completed'
-                            )
-                        ) {
+                            if (
+                                !response ||
+                                !response.success
+                            ) {
 
-                            return i;
+                                execution.handleError(
+                                    getErrorMessage(
+                                        response,
+                                        'Impossible de créer l’exécution.'
+                                    )
+                                );
+
+                                return;
+                            }
+
+
+                            var data =
+                                response.data || {};
+
+
+                            /*
+                             * -------------------------------------
+                             * EXECUTION ID
+                             * -------------------------------------
+                             */
+
+                            state.executionId =
+                                data.execution_id ||
+                                (
+                                    data.execution &&
+                                    data.execution.id
+                                );
+
+
+                            /*
+                             * -------------------------------------
+                             * STEPS
+                             * -------------------------------------
+                             *
+                             * Ici seulement les steps deviennent
+                             * connus.
+                             */
+
+                            state.steps =
+                                data.steps ||
+                                (
+                                    data.execution &&
+                                    data.execution.steps
+                                ) ||
+                                [];
+
+
+                            /*
+                             * -------------------------------------
+                             * VALIDATION
+                             * -------------------------------------
+                             */
+
+                            if (
+                                !state.executionId
+                            ) {
+
+                                execution.handleError(
+                                    'L’identifiant de l’exécution est manquant.'
+                                );
+
+                                return;
+                            }
+
+
+                            if (
+                                !state.steps.length
+                            ) {
+
+                                execution.handleError(
+                                    'Aucune étape n’a été retournée par le serveur.'
+                                );
+
+                                return;
+                            }
+
+
+                            /*
+                             * -------------------------------------
+                             * STATE INITIAL
+                             * -------------------------------------
+                             */
+
+                            state.currentStepIndex =
+                                null;
+
+                            state.completedSteps =
+                                0;
+
+                            state.status =
+                                'ready';
+
+
+                            /*
+                             * -------------------------------------
+                             * RENDER
+                             * -------------------------------------
+                             */
+
+                            renderer.renderExecution();
+
+                            renderer.updateProgress();
+
+
+                            /*
+                             * -------------------------------------
+                             * RUN PREMIER STEP
+                             * -------------------------------------
+                             */
+
+                            setTimeout(
+                                function () {
+
+                                    execution.run();
+
+                                },
+                                150
+                            );
 
                         }
+                    )
 
-                    }
+                    .fail(
+                        function (xhr) {
 
+                            console.error(
+                                '[AIPS] CREATE AJAX error:',
+                                xhr
+                            );
+
+
+                            execution.handleError(
+                                'Une erreur est survenue lors de la création de l’exécution.'
+                            );
+
+                        }
+                    );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * FIND NEXT STEP
+             * -------------------------------------------------
+             *
+             * IMPORTANT :
+             *
+             * On utilise le STATE et non le DOM.
+             */
+
+            getNextStepIndex: function () {
+
+                /*
+                 * Aucun step
+                 */
+
+                if (
+                    !state.steps.length
+                ) {
 
                     return null;
 
-                },
+                }
 
 
                 /*
-                 * -------------------------------------------------
-                 * RUN
-                 * -------------------------------------------------
+                 * Si un step est explicitement courant,
+                 * on continue avec lui.
                  */
 
-                run: function () {
-
-                    if (
-                        !state.executionId ||
-                        state.running ||
-                        state.waitingForHuman
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    /*
-                     * -----------------------------------------------
-                     * STEP À EXÉCUTER
-                     * -----------------------------------------------
-                     *
-                     * C'est LE point important.
-                     *
-                     * Dès que nous appelons le RUN AJAX,
-                     * nous savons quel step est concerné.
-                     */
-
-                    var stepIndex =
-                        this.getNextStepIndex();
-
-
-                    if (
-                        stepIndex === null
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    /*
-                     * On mémorise le step AVANT l'AJAX.
-                     */
-
-                    state.currentStepIndex =
-                        stepIndex;
-
-
-                    state.running =
-                        true;
-
-                    state.status =
-                        'running';
-
-
-                    /*
-                     * -----------------------------------------------
-                     * LOADING SUR LE STEP COURANT
-                     * -----------------------------------------------
-                     */
-
-                    renderer.updateStep(
-                        stepIndex,
-                        'running'
-                    );
-
-
-                    /*
-                     * -----------------------------------------------
-                     * AJAX RUN
-                     * -----------------------------------------------
-                     */
-
-                    api
-                        .runExecution(
-                            state.executionId
-                        )
-
-                        .done(
-                            function (response) {
-
-                                console.log(
-                                    '[AIPS] RUN response:',
-                                    response
-                                );
-
-
-                                /*
-                                 * -----------------------------------
-                                 * AJAX SUCCESS = FALSE
-                                 * -----------------------------------
-                                 *
-                                 * Le step concerné reste stepIndex.
-                                 */
-
-                                if (
-                                    !response ||
-                                    !response.success
-                                ) {
-
-                                    execution.handleStepError(
-                                        stepIndex,
-                                        getErrorMessage(
-                                            response,
-                                            'Erreur pendant l’exécution.'
-                                        )
-                                    );
-
-                                    return;
-                                }
-
-
-                                var data =
-                                    response.data || {};
-
-
-                                execution.handleRunResponse(
-                                    data,
-                                    stepIndex
-                                );
-
-                            }
-                        )
-
-                        .fail(
-                            function (xhr) {
-
-                                console.error(
-                                    '[AIPS] RUN AJAX error:',
-                                    xhr
-                                );
-
-
-                                var message =
-                                    'Une erreur est survenue pendant l’exécution.';
-
-
-                                if (
-                                    xhr &&
-                                    xhr.responseJSON &&
-                                    xhr.responseJSON.data &&
-                                    xhr.responseJSON.data.message
-                                ) {
-
-                                    message =
-                                        xhr.responseJSON.data.message;
-
-                                }
-
-
-                                /*
-                                 * IMPORTANT :
-                                 *
-                                 * Même en cas d'erreur HTTP,
-                                 * le step concerné est stepIndex.
-                                 */
-
-                                execution.handleStepError(
-                                    stepIndex,
-                                    message
-                                );
-
-                            }
-                        );
-
-                },
-
-
-                /*
-                 * -------------------------------------------------
-                 * HANDLE RUN RESPONSE
-                 * -------------------------------------------------
-                 */
-
-                handleRunResponse: function (
-                    data,
-                    stepIndex
+                if (
+                    state.currentStepIndex !== null
                 ) {
 
-                    var executionData =
-                        data.execution ||
-                        data;
+                    return state.currentStepIndex;
+
+                }
 
 
-                    /*
-                     * -----------------------------------------------
-                     * STATUS
-                     * -----------------------------------------------
-                     */
+                /*
+                 * Sinon on cherche le premier step
+                 * non terminé.
+                 */
 
-                    var status =
-                        data.step_status ||
-                        data.status ||
-                        executionData.step_status ||
-                        executionData.status ||
-                        'completed';
+                for (
+                    var i = 0;
+                    i < state.steps.length;
+                    i++
+                ) {
+
+                    var $step =
+                        $result.find(
+                            '.aips-agent-result__step[data-step-index="' +
+                            i +
+                            '"]'
+                        );
 
 
-                    /*
-                     * -----------------------------------------------
-                     * RESULT
-                     * -----------------------------------------------
-                     */
+                    if (
+                        !$step.hasClass(
+                            'is-completed'
+                        )
+                    ) {
 
-                    var result =
-                        data.result !== undefined
-                            ? data.result
-                            : (
-                                data.data !== undefined
-                                    ? data.data
-                                    : (
-                                        executionData.result !== undefined
-                                            ? executionData.result
-                                            : executionData.data
-                                    )
+                        return i;
+
+                    }
+
+                }
+
+
+                return null;
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * RUN
+             * -------------------------------------------------
+             */
+
+            run: function () {
+
+                if (
+                    !state.executionId ||
+                    state.running ||
+                    state.waitingForHuman
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * -----------------------------------------------
+                 * STEP À EXÉCUTER
+                 * -----------------------------------------------
+                 *
+                 * C'est LE point important.
+                 *
+                 * Dès que nous appelons le RUN AJAX,
+                 * nous savons quel step est concerné.
+                 */
+
+                var stepIndex =
+                    this.getNextStepIndex();
+
+
+                if (
+                    stepIndex === null
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * On mémorise le step AVANT l'AJAX.
+                 */
+
+                state.currentStepIndex =
+                    stepIndex;
+
+
+                state.running =
+                    true;
+
+                state.status =
+                    'running';
+
+
+                /*
+                 * -----------------------------------------------
+                 * LOADING SUR LE STEP COURANT
+                 * -----------------------------------------------
+                 */
+
+                renderer.updateStep(
+                    stepIndex,
+                    'running'
+                );
+
+
+                /*
+                 * -----------------------------------------------
+                 * AJAX RUN
+                 * -----------------------------------------------
+                 */
+
+                api
+                    .runExecution(
+                        state.executionId
+                    )
+
+                    .done(
+                        function (response) {
+
+                            console.log(
+                                '[AIPS] RUN response:',
+                                response
                             );
 
 
-                    /*
-                     * -----------------------------------------------
-                     * MESSAGE
-                     * -----------------------------------------------
-                     */
+                            /*
+                             * -----------------------------------
+                             * AJAX SUCCESS = FALSE
+                             * -----------------------------------
+                             *
+                             * Le step concerné reste stepIndex.
+                             */
 
-                    var message =
-                        data.message ||
-                        executionData.message ||
-                        null;
+                            if (
+                                !response ||
+                                !response.success
+                            ) {
+
+                                execution.handleStepError(
+                                    stepIndex,
+                                    getErrorMessage(
+                                        response,
+                                        'Erreur pendant l’exécution.'
+                                    )
+                                );
+
+                                return;
+                            }
 
 
-                    /*
-                     * ===============================================
-                     * FAILED
-                     * ===============================================
-                     */
+                            var data =
+                                response.data || {};
 
-                    if (
-                        status === 'failed'
-                    ) {
 
-                        this.handleStepError(
-                            stepIndex,
-                            data.error ||
-                            executionData.error ||
-                            message ||
-                            'Le step a échoué.',
-                            result
+                            execution.handleRunResponse(
+                                data,
+                                stepIndex
+                            );
+
+                        }
+                    )
+
+                    .fail(
+                        function (xhr) {
+
+                            console.error(
+                                '[AIPS] RUN AJAX error:',
+                                xhr
+                            );
+
+
+                            var message =
+                                'Une erreur est survenue pendant l’exécution.';
+
+
+                            if (
+                                xhr &&
+                                xhr.responseJSON &&
+                                xhr.responseJSON.data &&
+                                xhr.responseJSON.data.message
+                            ) {
+
+                                message =
+                                    xhr.responseJSON.data.message;
+
+                            }
+
+
+                            /*
+                             * IMPORTANT :
+                             *
+                             * Même en cas d'erreur HTTP,
+                             * le step concerné est stepIndex.
+                             */
+
+                            execution.handleStepError(
+                                stepIndex,
+                                message
+                            );
+
+                        }
+                    );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * HANDLE RUN RESPONSE
+             * -------------------------------------------------
+             */
+
+            handleRunResponse: function (
+                data,
+                stepIndex
+            ) {
+
+                var executionData =
+                    data.execution ||
+                    data;
+
+
+                /*
+                 * -----------------------------------------------
+                 * STATUS
+                 * -----------------------------------------------
+                 */
+
+                var status =
+                    data.step_status ||
+                    data.status ||
+                    executionData.step_status ||
+                    executionData.status ||
+                    'completed';
+
+
+                /*
+                 * -----------------------------------------------
+                 * RESULT
+                 * -----------------------------------------------
+                 */
+
+                var result =
+                    data.result !== undefined
+                        ? data.result
+                        : (
+                            data.data !== undefined
+                                ? data.data
+                                : (
+                                    executionData.result !== undefined
+                                        ? executionData.result
+                                        : executionData.data
+                                )
                         );
 
-                        return;
 
-                    }
+                /*
+                 * -----------------------------------------------
+                 * MESSAGE
+                 * -----------------------------------------------
+                 */
 
-
-                    /*
-                     * ===============================================
-                     * WAITING HUMAN
-                     * ===============================================
-                     */
-
-                    if (
-                        status === 'waiting' ||
-                        status === 'waiting_human'
-                    ) {
-
-                        state.running =
-                            false;
-
-                        state.waitingForHuman =
-                            true;
-
-                        state.status =
-                            'waiting_human';
+                var message =
+                    data.message ||
+                    executionData.message ||
+                    null;
 
 
-                        /*
-                         * Le step courant devient waiting.
-                         */
+                /*
+                 * ===============================================
+                 * FAILED
+                 * ===============================================
+                 */
 
-                        renderer.updateStep(
-                            stepIndex,
-                            'waiting',
-                            result,
-                            message
-                        );
+                if (
+                    status === 'failed'
+                ) {
 
+                    this.handleStepError(
+                        stepIndex,
+                        data.error ||
+                        executionData.error ||
+                        message ||
+                        'Le step a échoué.',
+                        result
+                    );
 
-                        /*
-                         * La validation est affichée
-                         * sur CE step.
-                         */
+                    return;
 
-                        renderer.renderHumanValidation(
-                            $result.find(
-                                '.aips-agent-result__step[data-step-index="' +
-                                stepIndex +
-                                '"]'
-                            )
-                        );
+                }
 
 
-                        renderer.updateProgress();
+                /*
+                 * ===============================================
+                 * WAITING HUMAN
+                 * ===============================================
+                 */
 
+                if (
+                    status === 'waiting' ||
+                    status === 'waiting_human'
+                ) {
 
-                        return;
+                    state.running =
+                        false;
 
-                    }
+                    state.waitingForHuman =
+                        true;
+
+                    state.status =
+                        'waiting_human';
 
 
                     /*
-                     * ===============================================
-                     * STEP TERMINÉ
-                     * ===============================================
+                     * Le step courant devient waiting.
                      */
 
                     renderer.updateStep(
                         stepIndex,
-                        'completed',
+                        'waiting',
                         result,
                         message
                     );
 
 
                     /*
-                     * -----------------------------------------------
-                     * COMPLETED STEPS
-                     * -----------------------------------------------
+                     * La validation est affichée
+                     * sur CE step.
                      */
 
-                    var completed;
-
-
-                    if (
-                        data.completed_steps !== undefined
-                    ) {
-
-                        completed =
-                            parseInt(
-                                data.completed_steps,
-                                10
-                            );
-
-                    } else {
-
-                        /*
-                         * Si le serveur ne donne pas le nombre,
-                         * le step courant + 1 est terminé.
-                         */
-
-                        completed =
-                            stepIndex + 1;
-
-                    }
-
-
-                    if (
-                        isNaN(completed)
-                    ) {
-
-                        completed =
-                            stepIndex + 1;
-
-                    }
-
-
-                    /*
-                     * Protection.
-                     */
-
-                    completed =
-                        Math.max(
-                            0,
-                            Math.min(
-                                completed,
-                                state.steps.length
-                            )
-                        );
-
-
-                    state.completedSteps =
-                        completed;
+                    renderer.renderHumanValidation(
+                        $result.find(
+                            '.aips-agent-result__step[data-step-index="' +
+                            stepIndex +
+                            '"]'
+                        )
+                    );
 
 
                     renderer.updateProgress();
 
 
-                    /*
-                     * ===============================================
-                     * EXECUTION TERMINÉE
-                     * ===============================================
-                     */
+                    return;
 
-                    var finalResult =
-                        data.final === true ||
-                        executionData.final === true ||
-                        (
-                            status === 'completed' &&
-                            completed >= state.steps.length
+                }
+
+
+                /*
+                 * ===============================================
+                 * STEP TERMINÉ
+                 * ===============================================
+                 */
+
+                renderer.updateStep(
+                    stepIndex,
+                    'completed',
+                    result,
+                    message
+                );
+
+
+                /*
+                 * -----------------------------------------------
+                 * COMPLETED STEPS
+                 * -----------------------------------------------
+                 */
+
+                var completed;
+
+
+                if (
+                    data.completed_steps !== undefined
+                ) {
+
+                    completed =
+                        parseInt(
+                            data.completed_steps,
+                            10
                         );
 
-
-                    if (
-                        finalResult
-                    ) {
-
-                        state.running =
-                            false;
-
-                        state.waitingForHuman =
-                            false;
-
-                        state.status =
-                            'completed';
-
-                        state.currentStepIndex =
-                            null;
-
-
-                        renderer.showFinalResult(
-                            result
-                        );
-
-
-                        renderer.setFormLoading(
-                            false
-                        );
-
-
-                        return;
-
-                    }
-
+                } else {
 
                     /*
-                     * ===============================================
-                     * STEP SUIVANT
-                     * ===============================================
+                     * Si le serveur ne donne pas le nombre,
+                     * le step courant + 1 est terminé.
                      */
+
+                    completed =
+                        stepIndex + 1;
+
+                }
+
+
+                if (
+                    isNaN(completed)
+                ) {
+
+                    completed =
+                        stepIndex + 1;
+
+                }
+
+
+                /*
+                 * Protection.
+                 */
+
+                completed =
+                    Math.max(
+                        0,
+                        Math.min(
+                            completed,
+                            state.steps.length
+                        )
+                    );
+
+
+                state.completedSteps =
+                    completed;
+
+
+                renderer.updateProgress();
+
+
+                /*
+                 * ===============================================
+                 * EXECUTION TERMINÉE
+                 * ===============================================
+                 */
+
+                var finalResult =
+                    data.final === true ||
+                    executionData.final === true ||
+                    (
+                        status === 'completed' &&
+                        completed >= state.steps.length
+                    );
+
+
+                if (
+                    finalResult
+                ) {
 
                     state.running =
                         false;
 
+                    state.waitingForHuman =
+                        false;
 
-                    /*
-                     * Le prochain step correspond normalement
-                     * au nombre de steps terminés.
-                     *
-                     * Exemple :
-                     *
-                     * completed = 1
-                     * => prochain step = index 1
-                     */
+                    state.status =
+                        'completed';
 
                     state.currentStepIndex =
-                        completed;
+                        null;
 
 
-                    /*
-                     * Petit délai pour permettre au navigateur
-                     * de rendre visuellement le résultat.
-                     */
-
-                    setTimeout(
-                        function () {
-
-                            execution.run();
-
-                        },
-                        250
+                    renderer.showFinalResult(
+                        result
                     );
 
-                },
+
+                    renderer.setFormLoading(
+                        false
+                    );
+
+
+                    return;
+
+                }
 
 
                 /*
-                 * -------------------------------------------------
-                 * STEP ERROR
-                 * -------------------------------------------------
-                 *
-                 * C'est ici que nous garantissons que l'erreur
-                 * est affichée sur le step courant.
+                 * ===============================================
+                 * STEP SUIVANT
+                 * ===============================================
                  */
 
-                handleStepError: function (
+                state.running =
+                    false;
+
+
+                /*
+                 * Le prochain step correspond normalement
+                 * au nombre de steps terminés.
+                 *
+                 * Exemple :
+                 *
+                 * completed = 1
+                 * => prochain step = index 1
+                 */
+
+                state.currentStepIndex =
+                    completed;
+
+
+                /*
+                 * Petit délai pour permettre au navigateur
+                 * de rendre visuellement le résultat.
+                 */
+
+                setTimeout(
+                    function () {
+
+                        execution.run();
+
+                    },
+                    250
+                );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * STEP ERROR
+             * -------------------------------------------------
+             *
+             * C'est ici que nous garantissons que l'erreur
+             * est affichée sur le step courant.
+             */
+
+            handleStepError: function (
+                stepIndex,
+                message,
+                result
+            ) {
+
+                state.running =
+                    false;
+
+                state.waitingForHuman =
+                    false;
+
+                state.status =
+                    'failed';
+
+
+                /*
+                 * IMPORTANT :
+                 *
+                 * stepIndex vient directement de run().
+                 *
+                 * Il correspond donc exactement au step
+                 * qui était en cours d'exécution.
+                 */
+
+                renderer.updateStep(
                     stepIndex,
-                    message,
-                    result
-                ) {
-
-                    state.running =
-                        false;
-
-                    state.waitingForHuman =
-                        false;
-
-                    state.status =
-                        'failed';
-
-
-                    /*
-                     * IMPORTANT :
-                     *
-                     * stepIndex vient directement de run().
-                     *
-                     * Il correspond donc exactement au step
-                     * qui était en cours d'exécution.
-                     */
-
-                    renderer.updateStep(
-                        stepIndex,
-                        'failed',
-                        result,
-                        message
-                    );
-
-
-                    /*
-                     * Message global éventuel.
-                     */
-
-                    renderer.showExecutionError(
-                        message
-                    );
-
-
-                    /*
-                     * On arrête le formulaire.
-                     */
-
-                    renderer.setFormLoading(
-                        false
-                    );
-
-                },
+                    'failed',
+                    result,
+                    message
+                );
 
 
                 /*
-                 * -------------------------------------------------
-                 * GLOBAL ERROR
-                 * -------------------------------------------------
-                 *
-                 * Utilisé pour les erreurs AVANT l'exécution
-                 * des steps :
-                 *
-                 * - CREATE échoue
-                 * - execution_id manquant
-                 * - steps absents
+                 * Message global éventuel.
                  */
 
-                handleError: function (message) {
-
-                    state.running =
-                        false;
-
-                    state.waitingForHuman =
-                        false;
-
-                    state.status =
-                        'failed';
-
-
-                    renderer.showExecutionError(
-                        message
-                    );
-
-
-                    renderer.setFormLoading(
-                        false
-                    );
-
-                },
+                renderer.showExecutionError(
+                    message
+                );
 
 
                 /*
-                 * -------------------------------------------------
-                 * HUMAN VALIDATION
-                 * -------------------------------------------------
+                 * On arrête le formulaire.
                  */
 
-                validate: function (
-                    approved
+                renderer.setFormLoading(
+                    false
+                );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * GLOBAL ERROR
+             * -------------------------------------------------
+             *
+             * Utilisé pour les erreurs AVANT l'exécution
+             * des steps :
+             *
+             * - CREATE échoue
+             * - execution_id manquant
+             * - steps absents
+             */
+
+            handleError: function (message) {
+
+                state.running =
+                    false;
+
+                state.waitingForHuman =
+                    false;
+
+                state.status =
+                    'failed';
+
+
+                renderer.showExecutionError(
+                    message
+                );
+
+
+                renderer.setFormLoading(
+                    false
+                );
+
+            },
+
+
+            /*
+             * -------------------------------------------------
+             * HUMAN VALIDATION
+             * -------------------------------------------------
+             */
+
+            validate: function (
+                approved
+            ) {
+
+                if (
+                    !state.executionId ||
+                    state.currentStepIndex === null
                 ) {
 
-                    if (
-                        !state.executionId ||
-                        state.currentStepIndex === null
-                    ) {
+                    return;
 
-                        return;
-
-                    }
+                }
 
 
-                    if (
-                        state.running
-                    ) {
+                if (
+                    state.running
+                ) {
 
-                        return;
+                    return;
 
-                    }
-
-
-                    var stepIndex =
-                        state.currentStepIndex;
+                }
 
 
-                    var $step =
-                        $result.find(
-                            '.aips-agent-result__step[data-step-index="' +
-                            stepIndex +
-                            '"]'
-                        );
+                var stepIndex =
+                    state.currentStepIndex;
 
 
-                    state.running =
-                        true;
-
-
-                    renderer.showValidationLoading(
-                        $step
+                var $step =
+                    $result.find(
+                        '.aips-agent-result__step[data-step-index="' +
+                        stepIndex +
+                        '"]'
                     );
 
 
-                    api
-                        .resumeExecution(
-                            state.executionId,
-                            approved
-                        )
+                state.running =
+                    true;
 
-                        .done(
-                            function (response) {
 
-                                console.log(
-                                    '[AIPS] VALIDATE response:',
-                                    response
+                renderer.showValidationLoading(
+                    $step
+                );
+
+
+                api
+                    .resumeExecution(
+                        state.executionId,
+                        approved
+                    )
+
+                    .done(
+                        function (response) {
+
+                            console.log(
+                                '[AIPS] VALIDATE response:',
+                                response
+                            );
+
+
+                            /*
+                             * -----------------------------------
+                             * ERROR
+                             * -----------------------------------
+                             */
+
+                            if (
+                                !response ||
+                                !response.success
+                            ) {
+
+                                execution.handleStepError(
+                                    stepIndex,
+                                    getErrorMessage(
+                                        response,
+                                        'Impossible de valider l’exécution.'
+                                    )
                                 );
 
+                                return;
 
-                                /*
-                                 * -----------------------------------
-                                 * ERROR
-                                 * -----------------------------------
-                                 */
-
-                                if (
-                                    !response ||
-                                    !response.success
-                                ) {
-
-                                    execution.handleStepError(
-                                        stepIndex,
-                                        getErrorMessage(
-                                            response,
-                                            'Impossible de valider l’exécution.'
-                                        )
-                                    );
-
-                                    return;
-
-                                }
+                            }
 
 
-                                var data =
-                                    response.data || {};
+                            var data =
+                                response.data || {};
 
 
-                                /*
-                                 * -----------------------------------
-                                 * REFUS
-                                 * -----------------------------------
-                                 */
+                            /*
+                             * -----------------------------------
+                             * REFUS
+                             * -----------------------------------
+                             */
 
-                                if (
-                                    !approved
-                                ) {
-
-                                    state.running =
-                                        false;
-
-                                    state.waitingForHuman =
-                                        false;
-
-                                    state.status =
-                                        'failed';
-
-
-                                    renderer.updateStep(
-                                        stepIndex,
-                                        'failed',
-                                        null,
-                                        data.message ||
-                                        'L’exécution a été arrêtée.'
-                                    );
-
-
-                                    renderer.showExecutionError(
-                                        data.message ||
-                                        'L’exécution a été arrêtée.'
-                                    );
-
-
-                                    renderer.setFormLoading(
-                                        false
-                                    );
-
-
-                                    return;
-
-                                }
-
-
-                                /*
-                                 * -----------------------------------
-                                 * VALIDATION ACCEPTÉE
-                                 * -----------------------------------
-                                 */
+                            if (
+                                !approved
+                            ) {
 
                                 state.running =
                                     false;
@@ -2677,274 +2662,268 @@
                                 state.waitingForHuman =
                                     false;
 
-
-                                /*
-                                 * Le step de validation est considéré
-                                 * comme terminé.
-                                 *
-                                 * Le backend peut éventuellement déjà
-                                 * avoir fourni le nouveau nombre.
-                                 */
-
-                                if (
-                                    data.completed_steps !== undefined
-                                ) {
-
-                                    state.completedSteps =
-                                        parseInt(
-                                            data.completed_steps,
-                                            10
-                                        );
-
-                                } else {
-
-                                    state.completedSteps =
-                                        stepIndex + 1;
-
-                                }
-
-
-                                if (
-                                    isNaN(
-                                        state.completedSteps
-                                    )
-                                ) {
-
-                                    state.completedSteps =
-                                        stepIndex + 1;
-
-                                }
+                                state.status =
+                                    'failed';
 
 
                                 renderer.updateStep(
                                     stepIndex,
-                                    'completed',
-                                    data.result ||
-                                    data.data ||
+                                    'failed',
                                     null,
                                     data.message ||
-                                    'Validation effectuée.'
+                                    'L’exécution a été arrêtée.'
                                 );
 
 
-                                renderer.updateProgress();
-
-
-                                /*
-                                 * -----------------------------------
-                                 * CONTINUE
-                                 * -----------------------------------
-                                 */
-
-                                state.currentStepIndex =
-                                    state.completedSteps;
-
-
-                                setTimeout(
-                                    function () {
-
-                                        execution.run();
-
-                                    },
-                                    150
+                                renderer.showExecutionError(
+                                    data.message ||
+                                    'L’exécution a été arrêtée.'
                                 );
+
+
+                                renderer.setFormLoading(
+                                    false
+                                );
+
+
+                                return;
 
                             }
-                        )
-
-                        .fail(
-                            function (xhr) {
-
-                                console.error(
-                                    '[AIPS] VALIDATE AJAX error:',
-                                    xhr
-                                );
 
 
-                                state.running =
-                                    false;
+                            /*
+                             * -----------------------------------
+                             * VALIDATION ACCEPTÉE
+                             * -----------------------------------
+                             */
+
+                            state.running =
+                                false;
+
+                            state.waitingForHuman =
+                                false;
 
 
-                                var message =
-                                    'Une erreur est survenue pendant la validation.';
+                            /*
+                             * Le step de validation est considéré
+                             * comme terminé.
+                             *
+                             * Le backend peut éventuellement déjà
+                             * avoir fourni le nouveau nombre.
+                             */
 
+                            if (
+                                data.completed_steps !== undefined
+                            ) {
 
-                                if (
-                                    xhr &&
-                                    xhr.responseJSON &&
-                                    xhr.responseJSON.data &&
-                                    xhr.responseJSON.data.message
-                                ) {
+                                state.completedSteps =
+                                    parseInt(
+                                        data.completed_steps,
+                                        10
+                                    );
 
-                                    message =
-                                        xhr.responseJSON.data.message;
+                            } else {
 
-                                }
-
-
-                                /*
-                                 * Même principe :
-                                 *
-                                 * l'erreur appartient au step
-                                 * actuellement en validation.
-                                 */
-
-                                execution.handleStepError(
-                                    stepIndex,
-                                    message
-                                );
+                                state.completedSteps =
+                                    stepIndex + 1;
 
                             }
-                        );
-
-                }
-
-            };
 
 
-            /*
-             * =====================================================
-             * EVENTS
-             * =====================================================
-             */
+                            if (
+                                isNaN(
+                                    state.completedSteps
+                                )
+                            ) {
 
-            /*
-             * -----------------------------------------------------
-             * FORM SUBMIT
-             * -----------------------------------------------------
-             */
+                                state.completedSteps =
+                                    stepIndex + 1;
 
-            $form.on(
-                'submit',
-                function (event) {
-
-                    event.preventDefault();
+                            }
 
 
-                    /*
-                     * Protection double submit.
-                     */
-
-                    if (
-                        state.running ||
-                        state.status === 'creating'
-                    ) {
-
-                        return;
-
-                    }
+                            renderer.updateStep(
+                                stepIndex,
+                                'completed',
+                                data.result ||
+                                data.data ||
+                                null,
+                                data.message ||
+                                'Validation effectuée.'
+                            );
 
 
-                    var formData =
-                        new FormData(this);
+                            renderer.updateProgress();
 
 
-                    var input = {};
+                            /*
+                             * -----------------------------------
+                             * CONTINUE
+                             * -----------------------------------
+                             */
+
+                            state.currentStepIndex =
+                                state.completedSteps;
 
 
-                    formData.forEach(
-                        function (value, key) {
+                            setTimeout(
+                                function () {
 
-                            input[key] =
-                                value;
+                                    execution.run();
+
+                                },
+                                150
+                            );
+
+                        }
+                    )
+
+                    .fail(
+                        function (xhr) {
+
+                            console.error(
+                                '[AIPS] VALIDATE AJAX error:',
+                                xhr
+                            );
+
+
+                            state.running =
+                                false;
+
+
+                            var message =
+                                'Une erreur est survenue pendant la validation.';
+
+
+                            if (
+                                xhr &&
+                                xhr.responseJSON &&
+                                xhr.responseJSON.data &&
+                                xhr.responseJSON.data.message
+                            ) {
+
+                                message =
+                                    xhr.responseJSON.data.message;
+
+                            }
+
+
+                            /*
+                             * Même principe :
+                             *
+                             * l'erreur appartient au step
+                             * actuellement en validation.
+                             */
+
+                            execution.handleStepError(
+                                stepIndex,
+                                message
+                            );
 
                         }
                     );
 
+            }
 
-                    execution.create(
-                        input
-                    );
-
-                }
-            );
-
-
-            /*
-             * -----------------------------------------------------
-             * HUMAN VALIDATION
-             * -----------------------------------------------------
-             */
-
-            $result.on(
-                'click',
-                '.aips-validate-execution',
-                function () {
-
-                    if (
-                        state.running
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    execution.validate(
-                        true
-                    );
-
-                }
-            );
-
-
-            /*
-             * -----------------------------------------------------
-             * HUMAN REJECTION
-             * -----------------------------------------------------
-             */
-
-            $result.on(
-                'click',
-                '.aips-reject-execution',
-                function () {
-
-                    if (
-                        state.running
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    execution.validate(
-                        false
-                    );
-
-                }
-            );
-
-        }
+        };
 
 
         /*
-         * =========================================================
-         * AJAX HELPER
-         * =========================================================
-         *
-         * Ton helper existait déjà.
+         * =====================================================
+         * EVENTS
+         * =====================================================
          */
 
-        function post(
-            action,
-            data
-        ) {
+        /*
+         * -----------------------------------------------------
+         * FORM SUBMIT
+         * -----------------------------------------------------
+         */
 
-            return $.post(
-                MY_AI_AGENT.ajaxUrl,
-                $.extend(
-                    {
-                        action: action,
-                        nonce: MY_AI_AGENT.nonce
-                    },
-                    data
-                )
-            );
+        $form.on(
+            'submit',
+            function (event) {
 
-        }
+                event.preventDefault();
 
 
+                /*
+                 * Protection double submit.
+                 */
+
+                if (
+                    state.running ||
+                    state.status === 'creating'
+                ) {
+
+                    return;
+
+                }
+
+                execution.create(
+                    new FormData(this)
+                );
+
+            }
+        );
+
+
+        /*
+         * -----------------------------------------------------
+         * HUMAN VALIDATION
+         * -----------------------------------------------------
+         */
+
+        $result.on(
+            'click',
+            '.aips-validate-execution',
+            function () {
+
+                if (
+                    state.running
+                ) {
+
+                    return;
+
+                }
+
+
+                execution.validate(
+                    true
+                );
+
+            }
+        );
+
+
+        /*
+         * -----------------------------------------------------
+         * HUMAN REJECTION
+         * -----------------------------------------------------
+         */
+
+        $result.on(
+            'click',
+            '.aips-reject-execution',
+            function () {
+
+                if (
+                    state.running
+                ) {
+
+                    return;
+
+                }
+
+
+                execution.validate(
+                    false
+                );
+
+            }
+        );
+
+    }
 
 
     $(function () {

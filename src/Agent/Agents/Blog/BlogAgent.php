@@ -87,7 +87,7 @@ final class BlogAgent implements AgentInterface
      *
      * @param array<string, mixed> $input
      */
-    public function validate(array $input): void
+    public function validate(array &$input): array
     {
         if (
             !isset($input['theme'])
@@ -97,5 +97,6 @@ final class BlogAgent implements AgentInterface
                 __('Le thème est obligatoire.', MY_AI_AGENT_DOMAIN)
             );
         }
+        return $input;
     }
 }

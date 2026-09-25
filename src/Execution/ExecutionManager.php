@@ -30,7 +30,7 @@ final class ExecutionManager
     ): Execution {
         $agent = $this->agentManager->get($agentId);
 
-        $agent->validate($input);
+        $input = $agent->validate($input);
 
         $execution = new Execution(
             id: wp_generate_uuid4(),

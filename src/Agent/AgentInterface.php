@@ -24,6 +24,7 @@ interface AgentInterface
 
     /**
      * @param array<string, mixed> $input
+     * @return array<string, mixed>
      */
-    public function validate(array $input): void;
+    public function validate(array &$input): array;
 }

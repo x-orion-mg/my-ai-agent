@@ -9,6 +9,7 @@ use MyAIAgent\Admin\Pages\DashboardPage;
 use MyAIAgent\Admin\Pages\GenerateBlogPage;
 use MyAIAgent\Admin\Pages\GenerateProductPage;
 use MyAIAgent\Admin\Pages\HistoryPage;
+use MyAIAgent\Admin\Pages\legrandImportPage;
 use MyAIAgent\Admin\Pages\LogsPage;
 use MyAIAgent\Admin\Pages\PromptsPage;
 use MyAIAgent\Admin\Pages\SettingsPage;
@@ -40,6 +41,7 @@ final class AdminMenu
             new ApiPage($container),
             new HistoryPage($container),
             new LogsPage($container),
+            new legrandImportPage($container),
         ];
     }
 

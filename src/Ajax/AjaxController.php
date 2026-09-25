@@ -46,6 +46,12 @@ final class AjaxController extends AbstractController
             $input['nonce']
         );
 
+        if (!empty($_FILES)) {
+            $input = array_merge(
+                $input,
+                $_FILES
+            );
+        }
         try {
             $execution = $this->executionManager->create(
                 agentId: $agentId,

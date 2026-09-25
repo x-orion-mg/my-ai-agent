@@ -12,6 +12,9 @@ use MyAIAgent\Agent\Agents\Blog\Response\BlogResponseValidator;
 use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
+use MyAIAgent\Agent\Agents\Legrand\LegrandAgent;
+use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
+use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
 use MyAIAgent\Agent\Agents\Product\ProductAgent;
 use MyAIAgent\Agent\Agents\Product\Response\ProductResponseValidator;
 use MyAIAgent\Agent\Agents\Product\Steps\BuildPromptStep as ProductBuildPromptStep;
@@ -107,12 +110,12 @@ final class Plugin
     {
         $this->container->singleton(
             AgentManager::class,
-            static fn (): AgentManager => new AgentManager()
+            static fn(): AgentManager => new AgentManager()
         );
 
         $this->container->singleton(
             ExecutionRepository::class,
-            static fn (): ExecutionRepository => new ExecutionRepository()
+            static fn(): ExecutionRepository => new ExecutionRepository()
         );
 
         $this->container->singleton(
@@ -129,25 +132,25 @@ final class Plugin
 
         $this->container->singleton(
             PromptRepository::class,
-            static fn (): PromptRepository => new PromptRepository()
+            static fn(): PromptRepository => new PromptRepository()
         );
         $this->container->singleton(
             ApiKeyRepository::class,
-            static fn (): ApiKeyRepository => new ApiKeyRepository()
+            static fn(): ApiKeyRepository => new ApiKeyRepository()
         );
         $this->container->singleton(
             HistoryRepository::class,
-            static fn (): HistoryRepository => new HistoryRepository()
+            static fn(): HistoryRepository => new HistoryRepository()
         );
 
         $this->container->singleton(
             Settings::class,
-            static fn (): Settings => new Settings()
+            static fn(): Settings => new Settings()
         );
 
         $this->container->singleton(
             Logger::class,
-            static fn (Container $c): Logger => new Logger($c->get(Settings::class))
+            static fn(Container $c): Logger => new Logger($c->get(Settings::class))
         );
 
         $this->container->singleton(
@@ -160,7 +163,7 @@ final class Plugin
 
         $this->container->singleton(
             AjaxRouter::class,
-            static fn (Container $c): AjaxRouter => new AjaxRouter($c)
+            static fn(Container $c): AjaxRouter => new AjaxRouter($c)
         );
         $this->container->singleton(
             PromptController::class,
@@ -177,14 +180,14 @@ final class Plugin
 
         $this->container->singleton(
             ApiKeyRotator::class,
-            static fn (Container $c): ApiKeyRotator => new ApiKeyRotator(
+            static fn(Container $c): ApiKeyRotator => new ApiKeyRotator(
                 $c->get(ApiKeyRepository::class),
                 $c->get(Settings::class)
             )
         );
         $this->container->singleton(
             AIService::class,
-            static fn (Container $c): AIService => new AIService(
+            static fn(Container $c): AIService => new AIService(
                 $c->get(ProviderFactory::class),
                 $c->get(ApiKeyRotator::class)
             )
@@ -192,54 +195,54 @@ final class Plugin
 
         $this->container->singleton(
             StepExecutionResult::class,
-            static fn (): StepExecutionResult => new StepExecutionResult()
+            static fn(): StepExecutionResult => new StepExecutionResult()
         );
         $this->container->singleton(
             ValidateInputStep::class,
-            static fn (Container $c): ValidateInputStep => new ValidateInputStep()
+            static fn(Container $c): ValidateInputStep => new ValidateInputStep()
         );
         $this->container->singleton(
             BuildPromptStep::class,
-            static fn (Container $c): BuildPromptStep => new BuildPromptStep($c->get(PromptRepository::class))
+            static fn(Container $c): BuildPromptStep => new BuildPromptStep($c->get(PromptRepository::class))
         );
         $this->container->singleton(
             AskAiStep::class,
-            static fn (Container $c): AskAiStep => new AskAiStep()
+            static fn(Container $c): AskAiStep => new AskAiStep()
         );
 
         $this->container->singleton(
             AiResponseParser::class,
-            static fn (Container $c): AiResponseParser => new AiResponseParser()
+            static fn(Container $c): AiResponseParser => new AiResponseParser()
         );
         $this->container->singleton(
             BlogResponseValidator::class,
-            static fn (Container $c): BlogResponseValidator => new BlogResponseValidator()
+            static fn(Container $c): BlogResponseValidator => new BlogResponseValidator()
         );
 
         $this->container->singleton(
             'blog.process_ai_response_step',
-            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
+            static fn(Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
                 $c->get(AiResponseParser::class),
                 $c->get(BlogResponseValidator::class),
             )
         );
         $this->container->singleton(
             HumanValidationStep::class,
-            static fn (Container $c): HumanValidationStep => new HumanValidationStep()
+            static fn(Container $c): HumanValidationStep => new HumanValidationStep()
         );
         $this->container->singleton(
             BlogPostService::class,
-            static fn (): BlogPostService => new BlogPostService()
+            static fn(): BlogPostService => new BlogPostService()
         );
         $this->container->singleton(
             CreateBlogStep::class,
-            static fn (Container $c): CreateBlogStep => new CreateBlogStep($c->get(BlogPostService::class))
+            static fn(Container $c): CreateBlogStep => new CreateBlogStep($c->get(BlogPostService::class))
         );
 
 
         $this->container->singleton(
             BlogAgent::class,
-            static fn (Container $c): BlogAgent => new BlogAgent(
+            static fn(Container $c): BlogAgent => new BlogAgent(
                 $c->get(ValidateInputStep::class),
                 $c->get(BuildPromptStep::class),
                 $c->get(AskAiStep::class),
@@ -251,33 +254,33 @@ final class Plugin
 
         $this->container->singleton(
             ProductBuildPromptStep::class,
-            static fn (Container $c): ProductBuildPromptStep => new ProductBuildPromptStep($c->get(PromptRepository::class))
+            static fn(Container $c): ProductBuildPromptStep => new ProductBuildPromptStep($c->get(PromptRepository::class))
         );
 
         $this->container->singleton(
             ProductResponseValidator::class,
-            static fn (Container $c): ProductResponseValidator => new ProductResponseValidator()
+            static fn(Container $c): ProductResponseValidator => new ProductResponseValidator()
         );
 
         $this->container->singleton(
             ProductService::class,
-            static fn (Container $c): ProductService => new ProductService()
+            static fn(Container $c): ProductService => new ProductService()
         );
         $this->container->singleton(
             CreateProductStep::class,
-            static fn (Container $c): CreateProductStep => new CreateProductStep($c->get(ProductService::class))
+            static fn(Container $c): CreateProductStep => new CreateProductStep($c->get(ProductService::class))
         );
 
         $this->container->singleton(
             'product.process_ai_response_step',
-            static fn (Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
+            static fn(Container $c): ProcessAiResponseStep => new ProcessAiResponseStep(
                 $c->get(AiResponseParser::class),
                 $c->get(ProductResponseValidator::class),
             )
         );
         $this->container->singleton(
             GetProductOfficialStep::class,
-            static fn (Container $c): GetProductOfficialStep => new GetProductOfficialStep()
+            static fn(Container $c): GetProductOfficialStep => new GetProductOfficialStep()
         );
 
         $this->container->singleton(
@@ -291,14 +294,30 @@ final class Plugin
             )
         );
 
+        // Agent Legrand
+        $this->container->singleton(
+            LegrandCsvValidationResult::class,
+            static fn(Container $c) : LegrandCsvValidationResult => new LegrandCsvValidationResult()
+        );
+        $this->container->singleton(ValidateCsvInputStep::class,
+            static fn(Container $c): ValidateCsvInputStep =>  new ValidateCsvInputStep()
+        );
+
+        $this->container->singleton(
+            LegrandAgent::class,
+            static fn(Container $c): LegrandAgent => new LegrandAgent(
+                $c->get(ValidateCsvInputStep::class),
+            )
+        );
+
         //admin
         $this->container->singleton(
             AdminMenu::class,
-            static fn (Container $c): AdminMenu => new AdminMenu($c)
+            static fn(Container $c): AdminMenu => new AdminMenu($c)
         );
         $this->container->singleton(
             Assets::class,
-            static fn (Container $c): Assets => new Assets()
+            static fn(Container $c): Assets => new Assets()
         );
 
     }
@@ -312,7 +331,7 @@ final class Plugin
             $this->container->get(BlogAgent::class),
         );
         $agentManager->register(
-            $this->container->get(ProductAgent::class)
+            $this->container->get(LegrandAgent::class)
         );
     }
 

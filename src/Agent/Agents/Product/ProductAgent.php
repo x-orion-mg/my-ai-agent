@@ -105,7 +105,7 @@ final readonly class ProductAgent implements AgentInterface
      *
      * @param array<string, mixed> $input
      */
-    public function validate(array $input): void
+    public function validate(array &$input): array
     {
         $inputRequeried = [
             'reference',
@@ -130,6 +130,6 @@ final readonly class ProductAgent implements AgentInterface
                 );
             }
         }
-
+        return $input;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MyAIAgent\Agent\Agents\Blog\Steps;
+namespace MyAIAgent\Agent\Agents\Product\Steps;
 
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\AgentContext;
