@@ -8,6 +8,7 @@ use MyAIAgent\Admin\AbstractPage;
 use MyAIAgent\Repository\ApiKeyRepository;
 use MyAIAgent\Repository\HistoryRepository;
 use MyAIAgent\Repository\PromptRepository;
+use MyAIAgent\Services\Legrand\Repository\ImportRepository;
 
 final class DashboardPage extends AbstractPage
 {
@@ -34,11 +35,14 @@ final class DashboardPage extends AbstractPage
         $prompts = $this->container->get(PromptRepository::class);
         /** @var ApiKeyRepository $keys */
         $keys = $this->container->get(ApiKeyRepository::class);
+        /** @var ImportRepository $import */
+        $imports = $this->container->get(ImportRepository::class);
 
         $this->view('dashboard', [
             'historyCount' => $history->count(),
             'promptCount'  => $prompts->count(),
             'keyCount'     => count($keys->all()),
+            'importCount'  => $imports->count(),
             'recent'       => $history->paginate(1, 5),
             'wooActive'    => class_exists('WooCommerce'),
         ]);

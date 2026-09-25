@@ -40,6 +40,8 @@ use MyAIAgent\Repository\HistoryRepository;
 use MyAIAgent\Repository\PromptRepository;
 use MyAIAgent\Services\Blog\BlogPostService;
 use MyAIAgent\Services\File\FileStorageService;
+use MyAIAgent\Services\Legrand\Controller\ImportController;
+use MyAIAgent\Services\Legrand\Repository\ImportRepository;
 use MyAIAgent\Services\Product\ProductService;
 use MyAIAgent\Services\Settings;
 
@@ -297,12 +299,24 @@ final class Plugin
 
         // Agent Legrand
         $this->container->singleton(
+            ImportRepository::class,
+            static fn(Container $c): ImportRepository => new ImportRepository()
+        );
+        $this->container->singleton(
+            ImportController::class,
+            static fn(Container $c): ImportController => new ImportController(
+                $c->get(ImportRepository::class),
+                $c->get(ExecutionManager::class)
+            )
+        );
+        $this->container->singleton(
             FileStorageService::class,
             static fn(Container $c) : FileStorageService => new FileStorageService()
         );
         $this->container->singleton(ValidateCsvInputStep::class,
             static fn(Container $c): ValidateCsvInputStep =>  new ValidateCsvInputStep(
                 $c->get(FileStorageService::class),
+                $c->get(ImportRepository::class)
             )
         );
 

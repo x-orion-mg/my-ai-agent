@@ -11,20 +11,22 @@ final class ImportRepository extends AbstractRepository
         return 'imports';
     }
 
-    public function create( string $source, string $filename, string $status = 'validating'): int {
+    public function create( string $source, string $filename, int $totalRows): int {
         $result = $this->wpdb->insert(
             self::tableName(),
             [
                 'source'     => $source,
                 'filename'   => $filename,
-                'status'     => $status,
+                'status'     => 'uploaded',
                 'started_at' => current_time('mysql'),
+                'total_rows' => $totalRows,
             ],
             [
                 '%s',
                 '%s',
                 '%s',
                 '%s',
+                '%d',
             ]
         );
 
@@ -112,4 +114,26 @@ final class ImportRepository extends AbstractRepository
             [$id]
         );
     }
+
+    public function count(): int
+    {
+        return (int) $this->wpdb->get_var(
+            'SELECT COUNT(*) FROM ' . self::tableName()
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findAll(): array
+    {
+        return $this->wpdb->get_results(
+            'SELECT *
+         FROM ' . self::tableName() . '
+         ORDER BY id DESC',
+            ARRAY_A
+        );
+    }
+
+
 }

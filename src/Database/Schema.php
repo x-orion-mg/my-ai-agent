@@ -117,6 +117,7 @@ final class Schema
             updated INT UNSIGNED NOT NULL DEFAULT 0,
             unchanged INT UNSIGNED NOT NULL DEFAULT 0,
             errors INT UNSIGNED NOT NULL DEFAULT 0,
+            error_message TEXT NULL,
             PRIMARY KEY (id),
             KEY status (status),
             KEY source (source),

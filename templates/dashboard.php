@@ -5,6 +5,7 @@
  * @var int                                                   $historyCount
  * @var int                                                   $promptCount
  * @var int                                                   $keyCount
+ * @var int                                                   $importCount
  * @var array<int, \AIProductStudio\History\HistoryEntry>     $recent
  * @var bool                                                  $wooActive
  */
@@ -33,6 +34,10 @@ if (! defined('ABSPATH')) {
         <div class="aips-card">
             <span class="aips-card__value"><?php echo esc_html((string) $keyCount); ?></span>
             <span class="aips-card__label"><?php esc_html_e('Clés API', MY_AI_AGENT_DOMAIN); ?></span>
+        </div>
+        <div class="aips-card">
+            <span class="aips-card__value"><?php echo esc_html((string) $importCount); ?></span>
+            <span class="aips-card__label"><?php esc_html_e('Import CSV', MY_AI_AGENT_DOMAIN); ?></span>
         </div>
     </div>
 
@@ -75,4 +80,57 @@ if (! defined('ABSPATH')) {
         <?php endif; ?>
         </tbody>
     </table>
+
+    <div class="my-ai-agent-imports">
+
+        <div class="my-ai-agent-imports__header">
+            <div>
+                <h2>Imports</h2>
+                <p class="description">
+                    Liste des fichiers CSV importés.
+                </p>
+            </div>
+        </div>
+
+        <div
+                class="my-ai-agent-notice"
+                id="my-ai-agent-imports-notice"
+                hidden
+        ></div>
+
+        <div class="my-ai-agent-table-wrapper">
+
+            <table class="widefat fixed striped my-ai-agent-imports-table">
+
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Source</th>
+                    <th>Fichier</th>
+                    <th>Date</th>
+                    <th>Lignes</th>
+                    <th>Résultat</th>
+                    <th>Statut</th>
+                    <th class="my-ai-agent-imports__actions">
+                        Action
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody id="my-ai-agent-imports-list">
+
+                <tr class="my-ai-agent-imports__empty">
+                    <td colspan="8">
+                        Aucun import trouvé.
+                    </td>
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
 </div>

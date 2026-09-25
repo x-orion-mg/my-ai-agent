@@ -2925,6 +2925,450 @@
 
     }
 
+    /*----------------------------------
+    Listing import
+     */
+    function initImportCSV() {
+
+        var Imports = {
+
+            $list: null,
+            $notice: null,
+
+            init: function () {
+
+                this.$list =
+                    $('#my-ai-agent-imports-list');
+
+                this.$notice =
+                    $('#my-ai-agent-imports-notice');
+
+                /*
+                 * La page courante ne contient pas
+                 * forcément la liste des imports.
+                 */
+                if (!this.$list.length) {
+                    return;
+                }
+
+                this.bindEvents();
+
+                this.load();
+            },
+
+            bindEvents: function () {
+
+                var self = this;
+
+                /*
+                 * Event delegation.
+                 *
+                 * Important car les boutons sont créés
+                 * dynamiquement dans render().
+                 */
+                this.$list.on(
+                    'click',
+                    '.my-ai-agent-import-sync',
+                    function (event) {
+
+                        event.preventDefault();
+
+                        var $button = $(this);
+
+                        var importId =
+                            $button.data('import-id');
+
+                        if (!importId) {
+                            return;
+                        }
+
+                        self.synchronize(
+                            importId,
+                            $button
+                        );
+                    }
+                );
+            },
+
+            load: function () {
+
+                var self = this;
+
+                this.showLoading();
+
+                post(
+                    'my_ai_agent_get_imports',
+                    {}
+                )
+                    .done(function (response) {
+
+                        if (
+                            !response ||
+                            !response.success
+                        ) {
+
+                            self.showError(
+                                self.getErrorMessage(
+                                    response
+                                )
+                            );
+
+                            return;
+                        }
+
+                        self.render(
+                            response.data.imports || []
+                        );
+                    })
+                    .fail(function () {
+
+                        self.showError(
+                            'Impossible de charger les imports.'
+                        );
+                    });
+            },
+
+            render: function (imports) {
+
+                var self = this;
+
+                this.$list.empty();
+
+                if (!imports.length) {
+
+                    this.$list.html(
+                        '<tr class="my-ai-agent-imports__empty">' +
+                        '<td colspan="8">' +
+                        'Aucun import trouvé.' +
+                        '</td>' +
+                        '</tr>'
+                    );
+
+                    return;
+                }
+
+                $.each(
+                    imports,
+                    function (index, item) {
+
+                        self.$list.append(
+                            self.renderRow(item)
+                        );
+                    }
+                );
+            },
+
+            renderRow: function (item) {
+
+                var status =
+                    this.escapeHtml(
+                        item.status || ''
+                    );
+
+                var statusClass =
+                    this.getStatusClass(
+                        item.status
+                    );
+
+                var action = '';
+
+                /*
+                 * Le bouton de synchronisation est
+                 * disponible uniquement pour les imports
+                 * qui peuvent être synchronisés.
+                 */
+                if (
+                    item.status === 'uploaded' ||
+                    item.status === 'completed'
+                ) {
+
+                    action =
+                        '<button ' +
+                        'type="button" ' +
+                        'class="button my-ai-agent-import-sync" ' +
+                        'data-import-id="' +
+                        this.escapeAttribute(item.id) +
+                        '">' +
+
+                        '<span class="my-ai-agent-import-sync__text">' +
+                        'Synchroniser' +
+                        '</span>' +
+
+                        '<span class="my-ai-agent-import-sync__loading">' +
+                        'Synchronisation...' +
+                        '</span>' +
+
+                        '</button>';
+                }
+
+                return (
+                    '<tr data-import-id="' +
+                    this.escapeAttribute(item.id) +
+                    '">' +
+
+                    '<td>' +
+                    this.escapeHtml(item.id) +
+                    '</td>' +
+
+                    '<td>' +
+                    this.escapeHtml(item.source || '') +
+                    '</td>' +
+
+                    '<td>' +
+                    '<div class="my-ai-agent-import-file">' +
+                    this.escapeHtml(
+                        item.filename || ''
+                    ) +
+                    '</div>' +
+                    '</td>' +
+
+                    '<td>' +
+                    this.escapeHtml(
+                        item.started_at || ''
+                    ) +
+                    '</td>' +
+
+                    '<td>' +
+                    this.escapeHtml(
+                        item.total_rows || 0
+                    ) +
+                    '</td>' +
+
+                    '<td>' +
+
+                    '<div class="my-ai-agent-import-result">' +
+
+                    '<span>' +
+                    'Insérés : ' +
+                    '<strong>' +
+                    this.escapeHtml(
+                        item.inserted || 0
+                    ) +
+                    '</strong>' +
+                    '</span>' +
+
+                    '<span>' +
+                    'Mis à jour : ' +
+                    '<strong>' +
+                    this.escapeHtml(
+                        item.updated || 0
+                    ) +
+                    '</strong>' +
+                    '</span>' +
+
+                    '<span>' +
+                    'Inchangés : ' +
+                    '<strong>' +
+                    this.escapeHtml(
+                        item.unchanged || 0
+                    ) +
+                    '</strong>' +
+                    '</span>' +
+
+                    '<span>' +
+                    'Erreurs : ' +
+                    '<strong>' +
+                    this.escapeHtml(
+                        item.errors || 0
+                    ) +
+                    '</strong>' +
+                    '</span>' +
+
+                    '</div>' +
+
+                    '</td>' +
+
+                    '<td>' +
+
+                    '<span class="' +
+                    'my-ai-agent-import-status ' +
+                    statusClass +
+                    '">' +
+
+                    status +
+
+                    '</span>' +
+
+                    '</td>' +
+
+                    '<td class="my-ai-agent-imports__actions">' +
+
+                    action +
+
+                    '</td>' +
+
+                    '</tr>'
+                );
+            },
+
+            synchronize: function (
+                importId,
+                $button
+            ) {
+
+                var self = this;
+
+                /*
+                 * Protection contre le double clic.
+                 */
+                if (
+                    $button.hasClass('is-loading')
+                ) {
+                    return;
+                }
+
+                $button
+                    .addClass('is-loading')
+                    .prop('disabled', true);
+
+                post(
+                    'my_ai_agent_sync_import',
+                    {
+                        import_id: importId
+                    }
+                )
+                    .done(function (response) {
+
+                        if (
+                            !response ||
+                            !response.success
+                        ) {
+
+                            self.showError(
+                                self.getErrorMessage(
+                                    response
+                                )
+                            );
+
+                            return;
+                        }
+
+                        self.showSuccess(
+                            response.data.message ||
+                            'Synchronisation lancée.'
+                        );
+
+                        /*
+                         * Recharge la liste.
+                         */
+                        self.load();
+                    })
+                    .fail(function () {
+
+                        self.showError(
+                            'Une erreur est survenue pendant la synchronisation.'
+                        );
+                    })
+                    .always(function () {
+
+                        $button
+                            .removeClass('is-loading')
+                            .prop('disabled', false);
+                    });
+            },
+
+            showLoading: function () {
+
+                this.$list.html(
+                    '<tr>' +
+                    '<td colspan="8">' +
+                    'Chargement...' +
+                    '</td>' +
+                    '</tr>'
+                );
+            },
+
+            showSuccess: function (message) {
+
+                this.showNotice(
+                    message,
+                    'success'
+                );
+            },
+
+            showError: function (message) {
+
+                this.showNotice(
+                    message,
+                    'error'
+                );
+            },
+
+            showNotice: function (
+                message,
+                type
+            ) {
+
+                this.$notice
+                    .removeClass(
+                        'my-ai-agent-notice--success ' +
+                        'my-ai-agent-notice--error'
+                    )
+                    .addClass(
+                        'my-ai-agent-notice--' + type
+                    )
+                    .text(message)
+                    .prop('hidden', false);
+            },
+
+            getStatusClass: function (status) {
+
+                switch (status) {
+
+                    case 'uploaded':
+                        return 'my-ai-agent-import-status--uploaded';
+
+                    case 'processing':
+                        return 'my-ai-agent-import-status--processing';
+
+                    case 'completed':
+                        return 'my-ai-agent-import-status--completed';
+
+                    case 'error':
+                        return 'my-ai-agent-import-status--error';
+
+                    default:
+                        return 'my-ai-agent-import-status--processing';
+                }
+            },
+
+            getErrorMessage: function (response) {
+
+                if (
+                    response &&
+                    response.data &&
+                    response.data.message
+                ) {
+                    return response.data.message;
+                }
+
+                return 'Une erreur est survenue.';
+            },
+
+            escapeHtml: function (value) {
+
+                return $('<div>')
+                    .text(
+                        value == null
+                            ? ''
+                            : value
+                    )
+                    .html();
+            },
+
+            escapeAttribute: function (value) {
+
+                return this.escapeHtml(value);
+            }
+        };
+
+        /*
+         * Initialisation du module.
+         */
+        Imports.init();
+    }
+
+
 
     $(function () {
         initMediaPickers();
@@ -2934,5 +3378,6 @@
         initPrompts();
         initKeys();
         initAgents();
+        initImportCSV()
     });
 })(jQuery);

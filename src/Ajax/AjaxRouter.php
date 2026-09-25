@@ -7,6 +7,7 @@ namespace MyAIAgent\Ajax;
 use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\Core\Container;
 use MyAIAgent\Prompt\PromptController;
+use MyAIAgent\Services\Legrand\Controller\ImportController;
 
 /**
  * Maps AJAX actions to controller methods and registers them with WordPress.
@@ -35,8 +36,10 @@ final class AjaxRouter
             'my_ai_agent_delete_api_key'      => [ApiKeyController::class, 'delete'],
             'my_ai_agent_toggle_api_key'      => [ApiKeyController::class, 'toggle'],
             'my_ai_agent_create_execution'    => [AjaxController::class, 'create'],
-            'my_ai_agent_run_execution'    => [AjaxController::class, 'run'],
+            'my_ai_agent_run_execution'       => [AjaxController::class, 'run'],
             'my_ai_agent_resume_execution'    => [AjaxController::class, 'validate'],
+            'my_ai_agent_get_imports'         => [ImportController::class, 'index'],
+            'my_ai_agent_sync_import'         => [ImportController::class, 'synchronize'],
         ];
     }
 

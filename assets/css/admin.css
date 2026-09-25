@@ -915,3 +915,167 @@
         margin-bottom: 2px;
     }
 }
+
+
+/*======================================================
+ listing import csv
+ */
+.my-ai-agent-imports {
+    margin-top: 20px;
+}
+
+.my-ai-agent-imports__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.my-ai-agent-imports__header h2 {
+    margin: 0 0 4px;
+}
+
+.my-ai-agent-table-wrapper {
+    overflow-x: auto;
+}
+
+.my-ai-agent-imports-table {
+    min-width: 900px;
+}
+
+.my-ai-agent-imports-table th,
+.my-ai-agent-imports-table td {
+    vertical-align: middle;
+}
+
+.my-ai-agent-imports__actions {
+    width: 130px;
+    text-align: right;
+}
+
+.my-ai-agent-imports__actions .button {
+    white-space: nowrap;
+}
+
+/*
+ * Status
+ */
+
+.my-ai-agent-import-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 4px 8px;
+
+    border-radius: 3px;
+
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.my-ai-agent-import-status--uploaded {
+    background: #e7f5e9;
+    color: #137333;
+}
+
+.my-ai-agent-import-status--processing {
+    background: #fff4cc;
+    color: #8a6116;
+}
+
+.my-ai-agent-import-status--completed {
+    background: #e7f5e9;
+    color: #137333;
+}
+
+.my-ai-agent-import-status--error {
+    background: #fbeaea;
+    color: #b32d2e;
+}
+
+/*
+ * Résultat
+ */
+
+.my-ai-agent-import-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    font-size: 12px;
+}
+
+.my-ai-agent-import-result span {
+    color: #50575e;
+}
+
+.my-ai-agent-import-result strong {
+    color: #1d2327;
+}
+
+/*
+ * Fichier
+ */
+
+.my-ai-agent-import-file {
+    font-weight: 500;
+}
+
+.my-ai-agent-import-file small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #646970;
+}
+
+/*
+ * Loading
+ */
+
+.my-ai-agent-import-sync.is-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.my-ai-agent-import-sync.is-loading .my-ai-agent-import-sync__text {
+    display: none;
+}
+
+.my-ai-agent-import-sync.is-loading .my-ai-agent-import-sync__loading {
+    display: inline;
+}
+
+.my-ai-agent-import-sync__loading {
+    display: none;
+}
+
+/*
+ * Notice
+ */
+
+.my-ai-agent-notice {
+    margin: 15px 0;
+
+    padding: 10px 12px;
+
+    border-left: 4px solid;
+}
+
+.my-ai-agent-notice--success {
+    border-color: #00a32a;
+    background: #edfaef;
+}
+
+.my-ai-agent-notice--error {
+    border-color: #d63638;
+    background: #fcf0f1;
+}
+
+.my-ai-agent-imports__empty td {
+    padding: 30px;
+    text-align: center;
+    color: #646970;
+}

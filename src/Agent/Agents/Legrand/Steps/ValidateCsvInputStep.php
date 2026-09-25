@@ -9,6 +9,7 @@ use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\StepResult;
 use MyAIAgent\Services\File\FileStorageService;
+use MyAIAgent\Services\Legrand\Repository\ImportRepository;
 
 final class ValidateCsvInputStep implements AgentStepInterface
 {
@@ -24,7 +25,8 @@ final class ValidateCsvInputStep implements AgentStepInterface
     private const int MAX_ERRORS = 100;
 
     public function __construct(
-        private  FileStorageService $fileStorage,
+        private FileStorageService $fileStorage,
+        private ImportRepository $importRepository
 
     ) {
     }
@@ -74,9 +76,42 @@ final class ValidateCsvInputStep implements AgentStepInterface
             );
         }
 
+        /*
+      * CSV valide.
+      *
+      * On peut maintenant créer l'import en BDD.
+      */
+        $importId = $this->importRepository->create(
+            source: 'legrand',
+            filename: $fileCsv['name'],
+            totalRows: $validationResult->totalRows
+        );
+
+        if ($importId <= 0) {
+            /*
+             * Si l'insertion BDD échoue,
+             * on supprime également le fichier.
+             */
+            $this->fileStorage->delete(
+                $filePath
+            );
+
+            return StepResult::failed(
+                __(
+                    'Impossible d\'enregistrer l\'import.',
+                    MY_AI_AGENT_DOMAIN
+                )
+            );
+        }
+
         return StepResult::continue([
+            'import_id' => $importId,
+
             'message' => sprintf(
-                __('Tous les paramètres sont valides. Total Rows: %d', MY_AI_AGENT_DOMAIN),
+                __(
+                    'CSV valide. %d lignes détectées.',
+                    MY_AI_AGENT_DOMAIN
+                ),
                 $validationResult->totalRows
             ),
         ]);
