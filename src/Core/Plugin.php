@@ -14,6 +14,7 @@ use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
 use MyAIAgent\Agent\Agents\Legrand\LegrandAgent;
 use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
+use MyAIAgent\Agent\Agents\Legrand\Steps\ImportRowsStep;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
 use MyAIAgent\Agent\Agents\Product\ProductAgent;
 use MyAIAgent\Agent\Agents\Product\Response\ProductResponseValidator;
@@ -42,6 +43,7 @@ use MyAIAgent\Services\Blog\BlogPostService;
 use MyAIAgent\Services\File\FileStorageService;
 use MyAIAgent\Services\Legrand\Controller\ImportController;
 use MyAIAgent\Services\Legrand\Repository\ImportRepository;
+use MyAIAgent\Services\Legrand\Repository\ImportRowRepository;
 use MyAIAgent\Services\Product\ProductService;
 use MyAIAgent\Services\Settings;
 
@@ -307,6 +309,18 @@ final class Plugin
             static fn(Container $c): ImportRepository => new ImportRepository()
         );
         $this->container->singleton(
+            ImportRowRepository::class,
+            static fn(Container $c): ImportRowRepository => new ImportRowRepository()
+        );
+        $this->container->singleton(
+            ImportRowsStep::class,
+            static fn(Container $c): ImportRowsStep => new ImportRowsStep(
+                $c->get(ImportRepository::class),
+                $c->get(ImportRowRepository::class),
+                $c->get(FileStorageService::class)
+            )
+        );
+        $this->container->singleton(
             ImportController::class,
             static fn(Container $c): ImportController => new ImportController(
                 $c->get(ImportRepository::class),
@@ -328,6 +342,7 @@ final class Plugin
             static fn(Container $c): LegrandAgent => new LegrandAgent(
                 $c->get(ValidateCsvInputStep::class),
                 $c->get(FileStorageService::class),
+                $c->get(ImportRowsStep::class)
             )
         );
 

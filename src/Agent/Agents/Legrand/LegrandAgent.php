@@ -7,6 +7,7 @@ namespace MyAIAgent\Agent\Agents\Legrand;
 use finfo;
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
+use MyAIAgent\Agent\Agents\Legrand\Steps\ImportRowsStep;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
 use MyAIAgent\Services\File\FileStorageService;
 use MyAIAgent\Agent\AgentStepInterface;
@@ -19,6 +20,7 @@ final readonly class LegrandAgent implements AgentInterface
     public function __construct(
         private ValidateCsvInputStep $validateInputStep,
         private  FileStorageService $fileStorage,
+        private ImportRowsStep $importRowsStep,
 
     ) {
     }
@@ -52,6 +54,7 @@ final readonly class LegrandAgent implements AgentInterface
     {
         return [
             $this->validateInputStep,
+            $this->importRowsStep,
         ];
     }
 

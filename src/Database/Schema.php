@@ -125,22 +125,33 @@ final class Schema
         ) {$charset};";
     }
 
-    public static function importRow( string $charset ): string
+    public static function importRow(string $charset): string
     {
         return "CREATE TABLE " . ImportRowRepository::tableName() . " (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             import_id BIGINT UNSIGNED NOT NULL,
-            reference VARCHAR(100) NULL,
-            ean VARCHAR(100) NULL,
-            nom_technique VARCHAR(255) NULL,
-            categorie_famille VARCHAR(255) NULL,
-            nom_famille VARCHAR(255) NULL,
-            status VARCHAR(50) NULL,
+            reference VARCHAR(100) NOT NULL,
+            label VARCHAR(255) NULL,
+            family_code VARCHAR(100) NULL,
+            family_name VARCHAR(255) NULL,
+            ean VARCHAR(20) NULL,
+            promotion_price DECIMAL(12,2) NULL,
+            price DECIMAL(12,2) NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'pending',
             error TEXT NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL,
             PRIMARY KEY (id),
+            UNIQUE KEY reference (reference),
             KEY import_id (import_id),
-            KEY reference (reference),
-            KEY ean (ean)
+            KEY ean (ean),
+    
+            CONSTRAINT fk_import_rows_import
+                FOREIGN KEY (import_id)
+                REFERENCES " . ImportRepository::tableName() . "(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+    
         ) {$charset};";
     }
 

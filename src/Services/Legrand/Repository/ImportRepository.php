@@ -134,6 +134,35 @@ final class ImportRepository extends AbstractRepository
             ARRAY_A
         );
     }
+    public function updateCounters(
+        int $importId,
+        int $inserted,
+        int $updated = 0,
+        int $unchanged = 0,
+        int $errors = 0
+    ): bool {
+        return $this->wpdb->update(
+                self::tableName(),
+                [
+                    'inserted'  => $inserted,
+                    'updated'   => $updated,
+                    'unchanged' => $unchanged,
+                    'errors'    => $errors,
+                ],
+                [
+                    'id' => $importId,
+                ],
+                [
+                    '%d',
+                    '%d',
+                    '%d',
+                    '%d',
+                ],
+                [
+                    '%d',
+                ]
+            ) !== false;
+    }
 
 
 }
