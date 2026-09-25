@@ -8,8 +8,9 @@ use finfo;
 use InvalidArgumentException;
 use MyAIAgent\Agent\AgentInterface;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
+use MyAIAgent\Services\File\FileStorageService;
 use MyAIAgent\Agent\AgentStepInterface;
-use RuntimeException;
+
 
 
 final readonly class LegrandAgent implements AgentInterface
@@ -17,6 +18,7 @@ final readonly class LegrandAgent implements AgentInterface
 
     public function __construct(
         private ValidateCsvInputStep $validateInputStep,
+        private  FileStorageService $fileStorage,
 
     ) {
     }
@@ -66,9 +68,10 @@ final readonly class LegrandAgent implements AgentInterface
             $input,
             'legrand_csv'
         );
-         $input['legrand_csv']= $this->saveFile(
-            $input['legrand_csv']
-        );
+         $input['legrand_csv']= $this->fileStorage->saveUpload(
+             $input['legrand_csv'],
+             'legrand'
+         );
 
          return $input;
     }
@@ -192,98 +195,6 @@ final readonly class LegrandAgent implements AgentInterface
                 )
             );
         }
-    }
-
-    private function saveFile(array $file): array
-    {
-        $uploads = wp_upload_dir();
-
-        if (!empty($uploads['error'])) {
-            throw new RuntimeException(
-                sprintf(
-                    __('Impossible d’accéder au répertoire des uploads : %s', MY_AI_AGENT_DOMAIN),
-                    $uploads['error']
-                )
-            );
-        }
-
-        $directory = trailingslashit(
-                $uploads['basedir']
-            ) . 'my-ai-agent/legrand';
-
-        if (!wp_mkdir_p($directory)) {
-            throw new RuntimeException(
-                __(
-                    'Impossible de créer le répertoire de stockage du fichier.',
-                    MY_AI_AGENT_DOMAIN
-                )
-            );
-        }
-
-        $originalName = (string) ($file['name'] ?? '');
-
-        $extension = strtolower(
-            pathinfo($originalName, PATHINFO_EXTENSION)
-        );
-
-        $basename = pathinfo(
-            $originalName,
-            PATHINFO_FILENAME
-        );
-
-        /*
-         * Nom basé sur la date et l'heure de l'upload.
-         *
-         * Exemple :
-         * exemple-product-legrand-20260925-123745.csv
-         */
-        $filename = sprintf(
-            '%s-%s.%s',
-            sanitize_file_name($basename),
-            current_time('Ymd-His'),
-            $extension
-        );
-
-        if ($filename === '') {
-            throw new RuntimeException(
-                __(
-                    'Le nom du fichier est invalide.',
-                    MY_AI_AGENT_DOMAIN
-                )
-            );
-        }
-
-        /*
-         * Évite d'écraser un fichier existant.
-         */
-        $filename = wp_unique_filename(
-            $directory,
-            $filename
-        );
-
-        $destination = trailingslashit($directory) . $filename;
-
-        $tmpName = (string) ($file['tmp_name'] ?? '');
-
-        if (!move_uploaded_file(
-            $tmpName,
-            $destination
-        )) {
-            throw new RuntimeException(
-                __(
-                    'Impossible de sauvegarder le fichier.',
-                    MY_AI_AGENT_DOMAIN
-                )
-            );
-        }
-
-        return [
-            'name' => $filename,
-            'original_name' => $originalName,
-            'path' => $destination,
-            'size' => (int) filesize($destination),
-            'type' => (string) ($file['type'] ?? ''),
-        ];
     }
 
 }

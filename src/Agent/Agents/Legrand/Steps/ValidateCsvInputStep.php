@@ -8,6 +8,7 @@ use MyAIAgent\Agent\AgentContext;
 use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
 use MyAIAgent\Agent\AgentStepInterface;
 use MyAIAgent\Agent\StepResult;
+use MyAIAgent\Services\File\FileStorageService;
 
 final class ValidateCsvInputStep implements AgentStepInterface
 {
@@ -21,6 +22,12 @@ final class ValidateCsvInputStep implements AgentStepInterface
         'Prix',
     ];
     private const int MAX_ERRORS = 100;
+
+    public function __construct(
+        private  FileStorageService $fileStorage,
+
+    ) {
+    }
 
     public function id(): string
     {
@@ -49,16 +56,18 @@ final class ValidateCsvInputStep implements AgentStepInterface
                 __('Chemin du fichier CSV introuvable.', MY_AI_AGENT_DOMAIN)
             );
         }
-        $uploads = wp_upload_dir();
-        $filePath = trailingslashit($uploads['basedir']) . ltrim(MY_AI_AGENT_DOMAIN.'/legrand/'.$fileCsv['name'], '/');
 
+        $filePath = $this->fileStorage->getUploadPath(
+            'legrand',
+            $fileCsv['name']
+        );
         $validationResult = $this->validate(
             $filePath
         );
 
         if (!$validationResult->valid) {
             if ($filePath !== '') {
-                $this->deleteFile($filePath);
+                $this->fileStorage->delete($filePath);
             }
             return StepResult::failed(
                 $validationResult->errorMessage()
@@ -470,28 +479,6 @@ final class ValidateCsvInputStep implements AgentStepInterface
     ): void {
         if (count($errors) < self::MAX_ERRORS) {
             $errors[] = $message;
-        }
-    }
-
-    private function deleteFile(string $filePath): void
-    {
-        if ($filePath === '') {
-            return;
-        }
-
-        if (!is_file($filePath)) {
-            return;
-        }
-
-        if (!unlink($filePath)) {
-            // On ne fait pas échouer la validation pour une erreur de suppression.
-            // Tu peux éventuellement logger l'erreur ici.
-            error_log(
-                sprintf(
-                    'My AI Agent: impossible de supprimer le fichier "%s".',
-                    $filePath
-                )
-            );
         }
     }
 
