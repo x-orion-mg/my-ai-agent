@@ -25,8 +25,8 @@ final class ValidateCsvInputStep implements AgentStepInterface
     private const int MAX_ERRORS = 100;
 
     public function __construct(
-        private FileStorageService $fileStorage,
-        private ImportRepository $importRepository
+        private readonly FileStorageService $fileStorage,
+        private readonly ImportRepository $importRepository
 
     ) {
     }

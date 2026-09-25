@@ -3070,19 +3070,21 @@
                         item.status
                     );
 
-                var action = '';
+                var action =
+                    '<a ' +
+                    'class="button" ' +
+                    'href="' +
+                    this.getDownloadUrl(item.id) +
+                    '">' +
+                    'Télécharger' +
+                    '</a>';
 
-                /*
-                 * Le bouton de synchronisation est
-                 * disponible uniquement pour les imports
-                 * qui peuvent être synchronisés.
-                 */
                 if (
                     item.status === 'uploaded' ||
                     item.status === 'completed'
                 ) {
 
-                    action =
+                    action +=
                         '<button ' +
                         'type="button" ' +
                         'class="button my-ai-agent-import-sync" ' +
@@ -3100,6 +3102,7 @@
 
                         '</button>';
                 }
+
 
                 return (
                     '<tr data-import-id="' +
@@ -3265,6 +3268,25 @@
                             .removeClass('is-loading')
                             .prop('disabled', false);
                     });
+            },
+            getDownloadUrl: function (importId) {
+
+                var url =
+                    MY_AI_AGENT.ajaxUrl;
+
+                url += '?action=my_ai_agent_download_import';
+
+                url += '&nonce=' +
+                    encodeURIComponent(
+                        MY_AI_AGENT.nonce
+                    );
+
+                url += '&import_id=' +
+                    encodeURIComponent(
+                        importId
+                    );
+
+                return url;
             },
 
             showLoading: function () {

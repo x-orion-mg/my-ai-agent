@@ -40,6 +40,7 @@ final class AjaxRouter
             'my_ai_agent_resume_execution'    => [AjaxController::class, 'validate'],
             'my_ai_agent_get_imports'         => [ImportController::class, 'index'],
             'my_ai_agent_sync_import'         => [ImportController::class, 'synchronize'],
+        'my_ai_agent_download_import'         => [ImportController::class, 'download'],
         ];
     }
 

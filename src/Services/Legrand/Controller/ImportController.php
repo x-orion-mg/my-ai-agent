@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace MyAIAgent\Services\Legrand\Controller;
 
+use MyAIAgent\Services\File\FileStorageService;
 use MyAIAgent\Services\Legrand\Repository\ImportRepository;
 use MyAIAgent\Execution\ExecutionManager;
 use Throwable;
@@ -14,6 +15,7 @@ final readonly class ImportController
     public function __construct(
         private ImportRepository $importRepository,
         private ExecutionManager $executionManager,
+        private FileStorageService $fileStorage,
     )
     {
     }
@@ -138,6 +140,121 @@ final readonly class ImportController
             );
         }
     }
+
+    public function download(): void
+    {
+        $this->guard();
+
+        $importId = isset($_GET['import_id'])
+            ? absint($_GET['import_id'])
+            : 0;
+
+        if ($importId <= 0) {
+            wp_die(
+                esc_html__(
+                    'Import invalide.',
+                    MY_AI_AGENT_DOMAIN
+                ),
+                '',
+                [
+                    'response' => 400,
+                ]
+            );
+        }
+
+        $import = $this->importRepository->find($importId);
+
+        if ($import === null) {
+            wp_die(
+                esc_html__(
+                    'Import introuvable.',
+                    MY_AI_AGENT_DOMAIN
+                ),
+                '',
+                [
+                    'response' => 404,
+                ]
+            );
+        }
+
+        $filename = (string) ($import['filename'] ?? '');
+
+        if ($filename === '') {
+            wp_die(
+                esc_html__(
+                    'Fichier introuvable.',
+                    MY_AI_AGENT_DOMAIN
+                ),
+                '',
+                [
+                    'response' => 404,
+                ]
+            );
+        }
+
+        try {
+            $filePath = $this->fileStorage->getPath(
+                'legrand',
+                $filename
+            );
+        } catch (Throwable $exception) {
+            wp_die(
+                esc_html__(
+                    'Fichier introuvable.',
+                    MY_AI_AGENT_DOMAIN
+                ),
+                '',
+                [
+                    'response' => 404,
+                ]
+            );
+        }
+
+        if (!is_file($filePath) || !is_readable($filePath)) {
+            wp_die(
+                esc_html__(
+                    'Le fichier CSV est introuvable.',
+                    MY_AI_AGENT_DOMAIN
+                ),
+                '',
+                [
+                    'response' => 404,
+                ]
+            );
+        }
+
+        /*
+         * Nettoyage des buffers éventuels.
+         */
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $downloadName = basename($filename);
+
+        header(
+            'Content-Type: text/csv; charset=utf-8'
+        );
+
+        header(
+            'Content-Disposition: attachment; filename="' .
+            rawurlencode($downloadName) .
+            '"'
+        );
+
+        header(
+            'Content-Length: ' . filesize($filePath)
+        );
+
+        header(
+            'Cache-Control: private, no-store, no-cache, must-revalidate'
+        );
+
+        readfile($filePath);
+
+        exit;
+    }
+
 
     /**
      * Vérification AJAX.

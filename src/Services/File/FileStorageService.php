@@ -605,4 +605,33 @@ final class FileStorageService
             ? $mimeType
             : '';
     }
+
+    public function getPath(
+        string $directory,
+        string $filename
+    ): string {
+        $filename = basename($filename);
+
+        if ($filename === '') {
+            throw new RuntimeException(
+                'Nom de fichier invalide.'
+            );
+        }
+
+        $uploads = wp_upload_dir();
+
+        if (!empty($uploads['error'])) {
+            throw new RuntimeException(
+                (string) $uploads['error']
+            );
+        }
+
+        return trailingslashit($uploads['basedir'])
+            . self::BASE_DIRECTORY
+            . '/'
+            . trim($directory, '/')
+            . '/'
+            . $filename;
+    }
+
 }

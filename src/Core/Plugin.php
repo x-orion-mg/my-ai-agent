@@ -299,6 +299,10 @@ final class Plugin
 
         // Agent Legrand
         $this->container->singleton(
+            FileStorageService::class,
+            static fn(Container $c) : FileStorageService => new FileStorageService()
+        );
+        $this->container->singleton(
             ImportRepository::class,
             static fn(Container $c): ImportRepository => new ImportRepository()
         );
@@ -306,13 +310,11 @@ final class Plugin
             ImportController::class,
             static fn(Container $c): ImportController => new ImportController(
                 $c->get(ImportRepository::class),
-                $c->get(ExecutionManager::class)
+                $c->get(ExecutionManager::class),
+                $c->get(FileStorageService::class)
             )
         );
-        $this->container->singleton(
-            FileStorageService::class,
-            static fn(Container $c) : FileStorageService => new FileStorageService()
-        );
+
         $this->container->singleton(ValidateCsvInputStep::class,
             static fn(Container $c): ValidateCsvInputStep =>  new ValidateCsvInputStep(
                 $c->get(FileStorageService::class),
