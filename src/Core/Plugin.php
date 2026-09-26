@@ -199,10 +199,6 @@ final class Plugin
         );
 
         $this->container->singleton(
-            StepExecutionResult::class,
-            static fn(): StepExecutionResult => new StepExecutionResult()
-        );
-        $this->container->singleton(
             ValidateInputStep::class,
             static fn(Container $c): ValidateInputStep => new ValidateInputStep()
         );
