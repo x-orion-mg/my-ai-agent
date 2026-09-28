@@ -26,7 +26,7 @@ final class ProductJobService
 
     public function run(int $jobId): void
     {
-        print_r('eto a lelena');die();
+
         $job = $this->repository->find($jobId);
 
         if ($job === null || in_array(

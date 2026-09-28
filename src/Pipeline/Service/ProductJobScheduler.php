@@ -1,7 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MyAIAgent\Pipeline\Service;
+
+use MyAIAgent\Core\Plugin;
 
 final class ProductJobScheduler
 {
@@ -9,36 +12,39 @@ final class ProductJobScheduler
 
     public function register(): void
     {
-        do_action(
-            'my_ai_agent_run_product_job',
-            1
-        );
-
-       /* add_action(
+        add_action(
             self::HOOK,
             function (int $jobId): void {
 
-                $service = \MyAIAgent\Core\Plugin::instance()
-                    ->container()
-                    ->get(ProductJobService::class);
+                error_log(
+                    'HOOK EXECUTED - jobId = ' . $jobId
+                );
 
-                $service->run($jobId);
+                $pipeline = Plugin::instance()
+                    ->container()
+                    ->get(PipelineService::class);
+
+                $pipeline->processJob($jobId);
             }
-        );*/
+        );
     }
 
-    public function schedule(int $jobId, int $delay = 0): void
-    {
+    public function schedule(
+        int $jobId,
+        int $delay = 0
+    ): void {
 
         $timestamp = time() + max(0, $delay);
 
         if (function_exists('as_schedule_single_action')) {
+
             as_schedule_single_action(
                 $timestamp,
                 self::HOOK,
                 [$jobId],
                 'my-ai-agent'
             );
+
             return;
         }
 

@@ -14,12 +14,12 @@ use MyAIAgent\Pipeline\Exception\RetryableJobException;
 use MyAIAgent\Services\Settings;
 use Throwable;
 
-final class AiGenerationJobHandler implements JobHandlerInterface
+final readonly class AiGenerationJobHandler implements JobHandlerInterface
 {
     public function __construct(
-        private readonly AIService $ai,
-        private readonly BuildPromptStep $promptBuilder,
-        private readonly Settings $settings,
+        private AIService       $ai,
+        private BuildPromptStep $promptBuilder,
+        private Settings        $settings,
     ) {
     }
 

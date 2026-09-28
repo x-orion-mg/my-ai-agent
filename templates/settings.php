@@ -100,6 +100,6 @@ settings_errors('aips_settings');
             </tr>
         </table>
 
-        <?php submit_button(__('Enregistrer', MY_AI_AGENT_DOMAIN), 'primary', 'aips_settings_submit'); ?>
+        <?php submit_button(__('Enregistrer', MY_AI_AGENT_DOMAIN), 'primary', 'my_ai_agent_settings_submit'); ?>
     </form>
 </div>
