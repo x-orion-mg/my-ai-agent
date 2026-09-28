@@ -39,6 +39,7 @@ final class Database
             Schema::productAttributeValue($charset),
             Schema::productSeo($charset),
             Schema::wooCommerceProduct($charset),
+            Schema::productJobs($charset),
         ];
     }
 }

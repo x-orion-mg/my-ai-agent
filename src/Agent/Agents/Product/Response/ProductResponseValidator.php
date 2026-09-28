@@ -36,7 +36,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
             'shortDescription',
             'description',
             'sku',
-            'ean',
+            //'ean',
             'brand',
             //'productType',
             'category',
@@ -74,7 +74,7 @@ final class ProductResponseValidator implements AiResponseValidatorInterface
         $this->assertNullableString($data, 'sku');
         $this->assertNullableString($data, 'brand');
 
-        $this->assertString($data, 'ean');
+        //$this->assertString($data, 'ean');
         //$this->assertNonEmptyString($data, 'productType');
         $this->assertNonEmptyString($data, 'category');
     }

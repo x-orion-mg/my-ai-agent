@@ -15,6 +15,7 @@ use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
 use MyAIAgent\Agent\Agents\Legrand\LegrandAgent;
 use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ImportRowsStep;
+use MyAIAgent\Agent\Agents\Legrand\Steps\PipelineServiceStep;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
 use MyAIAgent\Agent\Agents\Product\ProductAgent;
 use MyAIAgent\Agent\Agents\Product\Response\ProductResponseValidator;
@@ -31,8 +32,8 @@ use MyAIAgent\Ajax\AjaxRouter;
 use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\API\ApiKeyRotator;
 use MyAIAgent\Execution\ExecutionManager;
-use MyAIAgent\Execution\StepExecutionResult;
 use MyAIAgent\Logger\Logger;
+use MyAIAgent\Pipeline\Service\PipelineService;
 use MyAIAgent\Prompt\PromptController;
 use MyAIAgent\Provider\ProviderFactory;
 use MyAIAgent\Repository\ApiKeyRepository;
@@ -92,6 +93,20 @@ final class Plugin
         /** @var AjaxRouter $router */
         $router = $this->container->get(AjaxRouter::class);
         $router->register();
+
+        add_filter(
+            'cron_schedules',
+            static function (array $schedules): array {
+                $schedules['every_15_minutes'] = [
+                    'interval' => 15 * MINUTE_IN_SECONDS,
+                    'display'  => __('Toutes les 15 minutes', 'my-ai-agent'),
+                ];
+
+                return $schedules;
+            }
+        );
+        $pipelineService = $this->container->get(PipelineService::class);
+        $pipelineService->register();
     }
 
     public function maybeWooCommerceNotice(): void
@@ -331,6 +346,10 @@ final class Plugin
                 $c->get(ImportRepository::class)
             )
         );
+        $this->container->singleton(
+            PipelineServiceStep::class,
+            static fn(Container $c): PipelineServiceStep => new PipelineServiceStep()
+        );
 
 
         $this->container->singleton(
@@ -338,7 +357,8 @@ final class Plugin
             static fn(Container $c): LegrandAgent => new LegrandAgent(
                 $c->get(ValidateCsvInputStep::class),
                 $c->get(FileStorageService::class),
-                $c->get(ImportRowsStep::class)
+                $c->get(ImportRowsStep::class),
+                $c->get(PipelineServiceStep::class)
             )
         );
 
@@ -352,6 +372,12 @@ final class Plugin
             static fn(Container $c): Assets => new Assets()
         );
 
+        //Pipeline Service
+        $this->container->singleton(
+            PipelineService::class,
+            static fn(Container $c): PipelineService => new PipelineService($c)
+        );
+
     }
 
     private function registerAgents(): void
@@ -361,6 +387,9 @@ final class Plugin
 
         $agentManager->register(
             $this->container->get(BlogAgent::class),
+        );
+        $agentManager->register(
+            $this->container->get(ProductAgent::class)
         );
         $agentManager->register(
             $this->container->get(LegrandAgent::class)

@@ -54,6 +54,26 @@ final class GetProductOfficialStep implements AgentStepInterface
         );
         $product = $legrand->getProduct($reference);
 
+        $missing = [];
+
+        if (empty($product->url)) {
+            $missing[] = 'URL';
+        }
+
+        if (empty($product->image)) {
+            $missing[] = 'image';
+        }
+
+        if (empty($product->technicalData)) {
+            $missing[] = 'données techniques';
+        }
+
+        if (!empty($missing)) {
+            return StepResult::failed(
+                'Informations manquantes : ' . implode(', ', $missing) . '.'
+            );
+        }
+
         $message = sprintf(
             __('Le produit a été trouvé. Voici les informations :
 <br> lien du produit sur %s 

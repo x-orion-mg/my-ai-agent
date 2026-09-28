@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 namespace MyAIAgent\Database;
+use MyAIAgent\Pipeline\Repository\ProductJobRepository;
 use MyAIAgent\Repository\ApiKeyRepository;
 use MyAIAgent\Repository\ExecutionRepository;
 use MyAIAgent\Repository\HistoryRepository;
@@ -358,5 +359,32 @@ final class Schema
             KEY status (status)
         ) {$charset};";
     }
+
+    public static function productJobs(string $charset): string
+    {
+        return "CREATE TABLE " . ProductJobRepository::tableName() . " (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            import_row_id BIGINT UNSIGNED NOT NULL,
+            reference VARCHAR(100) NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            attempts INT UNSIGNED NOT NULL DEFAULT 0,
+            max_attempts INT UNSIGNED NOT NULL DEFAULT 5,
+            available_at DATETIME NOT NULL,
+            locked_at DATETIME NULL,
+            locked_by VARCHAR(191) NULL,
+            payload LONGTEXT NULL,
+            last_error TEXT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY import_row_type (import_row_id, type),
+            KEY status_available (status, available_at),
+            KEY reference (reference),
+            KEY locked_at (locked_at),
+            KEY type (type)
+        ) {$charset};";
+    }
+
 
 }
