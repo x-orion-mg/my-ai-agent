@@ -9,10 +9,10 @@ use MyAIAgent\Pipeline\Enum\ProductJobType;
 use MyAIAgent\Pipeline\Service\PipelineTestService;
 use Throwable;
 
-final class PipelineCommand
+final readonly class PipelineCommand
 {
     public function __construct(
-        private readonly PipelineTestService $tester,
+        private PipelineTestService $tester,
     )
     {
     }
@@ -33,6 +33,9 @@ final class PipelineCommand
      *
      * [--format=<format>]
      * : table ou json. Default: table.
+     *
+     * [--bypass]
+     * : N'appelle pas l'API IA et utilise une réponse statique.
      *
      * ## EXAMPLES
      *
@@ -72,6 +75,7 @@ final class PipelineCommand
                 (int)$rowId,
                 $jobType,
                 isset($assocArgs['execute']),
+                isset($assocArgs['bypass'])
             );
         } catch (Throwable $exception) {
             \WP_CLI::error(

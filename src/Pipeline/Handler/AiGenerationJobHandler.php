@@ -83,7 +83,7 @@ final readonly class AiGenerationJobHandler implements JobHandlerInterface
 
         try {
             $response = $this->ai->ask(
-                (string) $this->settings->get('default_provider', 'openai'),
+                (string) $this->settings->get('default_provider', 'openrouter'),
                 $prompt
             );
         } catch (Throwable $exception) {

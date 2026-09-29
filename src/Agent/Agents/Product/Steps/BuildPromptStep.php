@@ -44,21 +44,21 @@ final readonly class BuildPromptStep implements AgentStepInterface
             );
         }
         $infoProduct = 'reference : '. $context->get('reference', '');
-        $infoProduct .= 'technical_name : '. $context->get('technical_name', '');
-        $infoProduct .= 'family_name : '. $context->get('family_name', '');
-        $infoProduct .= 'ean : '. $context->get('ean', '');
+        $infoProduct .= ', technical_name : '. $context->get('technical_name', '');
+        $infoProduct .= ', family_name : '. $context->get('family_name', '');
+        $infoProduct .= ', ean : '. $context->get('ean', '');
         $productOfficial = $context->get('product');
-        $infoProduct .= 'lien du produit : '. $productOfficial->url;
-        $infoProduct .= 'données techniques : '. $productOfficial->technicalData;
-        $infoProduct .= 'Lien image du produit : '. $productOfficial->image;
+        $infoProduct .= ', lien du produit : '. $productOfficial->url;
+        $infoProduct .= ', données techniques : '. $productOfficial->technicalData;
+        $infoProduct .= ', Lien image du produit : '. $productOfficial->image;
 
 
         $content = $prompt->content;
 
         $variables = [
             '{{theme}}' => $infoProduct,
-            '{{language}}' => (string) $context->get('language', ''),
-            '{{tone}}' => (string) $context->get('tone', ''),
+            '{{langue}}' => (string) $context->get('language', 'Fr'),
+            '{{ton}}' => (string) $context->get('tone', 'professional'),
             '{{imageProduit}}' => $productOfficial->image
         ];
 
