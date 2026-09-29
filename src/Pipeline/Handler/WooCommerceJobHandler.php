@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MyAIAgent\Pipeline\Handler;
@@ -17,9 +18,19 @@ final class WooCommerceJobHandler implements JobHandlerInterface
     ) {
     }
 
-    public function handle(ProductJob $job): array
-    {
+    /**
+     * Prépare les données qui seront envoyées à WooCommerce.
+     *
+     * IMPORTANT :
+     * Cette méthode ne crée/modifie aucun produit.
+     *
+     * @return array<string,mixed>
+     */
+    public function prepare(
+        ProductJob $job
+    ): array {
         $data = $job->payload['data'] ?? null;
+
         $source = $job->payload['source'] ?? [];
 
         if (!is_array($data)) {
@@ -32,12 +43,26 @@ final class WooCommerceJobHandler implements JobHandlerInterface
             $source = [];
         }
 
+        /*
+         * Le SKU officiel est toujours
+         * la référence importée.
+         */
         $data['sku'] = $job->reference;
 
-        if (!isset($data['brand']) || !is_string($data['brand']) || trim($data['brand']) === '') {
+        /*
+         * Marque par défaut.
+         */
+        if (
+            !isset($data['brand'])
+            || !is_string($data['brand'])
+            || trim($data['brand']) === ''
+        ) {
             $data['brand'] = 'Legrand';
         }
 
+        /*
+         * Données provenant de la source officielle.
+         */
         if (isset($source['url'])) {
             $data['url'] = $source['url'];
         }
@@ -50,8 +75,19 @@ final class WooCommerceJobHandler implements JobHandlerInterface
             $data['technicalData'] = $source['technicalData'];
         }
 
+        return $data;
+    }
+
+    /**
+     * Exécution réelle WooCommerce.
+     */
+    public function handle(
+        ProductJob $job
+    ): array {
         try {
-            $productId = $this->productService->createOrUpdate($data);
+            $productId = $this->productService->createOrUpdate(
+                $this->prepare($job)
+            );
         } catch (Throwable $exception) {
             throw new RetryableJobException(
                 'Erreur WooCommerce : ' . $exception->getMessage(),

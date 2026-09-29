@@ -13,7 +13,6 @@ use MyAIAgent\Agent\Agents\Blog\Steps\BuildPromptStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\CreateBlogStep;
 use MyAIAgent\Agent\Agents\Blog\Steps\HumanValidationStep;
 use MyAIAgent\Agent\Agents\Legrand\LegrandAgent;
-use MyAIAgent\Agent\Agents\Legrand\Response\LegrandCsvValidationResult;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ImportRowsStep;
 use MyAIAgent\Agent\Agents\Legrand\Steps\PipelineServiceStep;
 use MyAIAgent\Agent\Agents\Legrand\Steps\ValidateCsvInputStep;
@@ -33,6 +32,7 @@ use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\API\ApiKeyRotator;
 use MyAIAgent\Execution\ExecutionManager;
 use MyAIAgent\Logger\Logger;
+use MyAIAgent\Pipeline\Command\PipelineCommand;
 use MyAIAgent\Pipeline\Service\PipelineService;
 use MyAIAgent\Prompt\PromptController;
 use MyAIAgent\Provider\ProviderFactory;
@@ -107,6 +107,15 @@ final class Plugin
         );
         $pipelineService = $this->container->get(PipelineService::class);
         $pipelineService->register();
+
+        if (defined('WP_CLI') && WP_CLI) {
+            \WP_CLI::add_command(
+                'my-ai-agent pipeline',
+                new PipelineCommand(
+                    $pipelineService->tester()
+                )
+            );
+        }
     }
 
     public function maybeWooCommerceNotice(): void

@@ -53,7 +53,6 @@ final class ImportRowRepository extends AbstractRepository
             );
         }
         $reId = $this->insertRow($importId, $data);
-        $reId = $this->insertRow($importId, $data);
         return new ImportRowSaveResult(
             id :$reId,
             inserted : true,

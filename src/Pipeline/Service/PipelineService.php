@@ -40,7 +40,7 @@ final readonly class PipelineService
     private RetryPolicy $retryPolicy;
 
     private RateLimiter $rateLimiter;
-
+    private PipelineTestService $tester;
     public function __construct(
         private Container $container
     ) {
@@ -226,7 +226,17 @@ final readonly class PipelineService
             $this->scheduler,
             [
                 'source' => $sourceHandler,
-                'ai' => $aiHandler,
+                'ai_generation' => $aiHandler,
+                'validation' => $validationHandler,
+                'woocommerce' => $woocommerceHandler,
+            ]
+        );
+
+        $this->tester = new PipelineTestService(
+            $rows,
+            [
+                'source' => $sourceHandler,
+                'ai_generation' => $aiHandler,
                 'validation' => $validationHandler,
                 'woocommerce' => $woocommerceHandler,
             ]
@@ -385,5 +395,10 @@ final readonly class PipelineService
                 'my_ai_agent_pipeline_recovery'
             );
         }
+    }
+
+    public function tester(): PipelineTestService
+    {
+        return $this->tester;
     }
 }
