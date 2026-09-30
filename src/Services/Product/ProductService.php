@@ -124,6 +124,39 @@ final class ProductService
             sanitize_text_field($sku)
         );
 
+        /*
+ * Prix normal.
+ */
+        if (
+            isset($data['regularPrice'])
+            && is_numeric($data['regularPrice'])
+        ) {
+            $regularPrice = (string)$data['regularPrice'];
+
+            if ((float)$regularPrice >= 0) {
+                $product->set_regular_price(
+                    wc_format_decimal($regularPrice)
+                );
+            }
+        }
+
+        /*
+         * Prix promotionnel.
+         */
+        if (
+            isset($data['salePrice'])
+            && is_numeric($data['salePrice'])
+        ) {
+            $salePrice = (string)$data['salePrice'];
+
+            if ((float)$salePrice >= 0) {
+                $product->set_sale_price(
+                    wc_format_decimal($salePrice)
+                );
+            }
+        }
+
+
         try {
             $productId = $product->save();
         } catch (\Throwable $exception) {
@@ -168,7 +201,12 @@ final class ProductService
     ): int
     {
         $changed = false;
-
+        /*
+         * Prix.
+         */
+        if ($this->updateProductPrices($product, $data)) {
+            $changed = true;
+        }
         /*
          * Nom.
          */
@@ -304,6 +342,113 @@ final class ProductService
 
         return $product->get_id();
     }
+
+    /**
+     * Update product prices.
+     *
+     * @param array<string,mixed> $data
+     */
+    private function updateProductPrices(
+        WC_Product $product,
+        array $data
+    ): bool {
+        $changed = false;
+
+        $regularPrice = null;
+        $salePrice = null;
+
+        /*
+         * Prix normal.
+         */
+        if (
+            array_key_exists('regularPrice', $data)
+            && $data['regularPrice'] !== null
+            && $data['regularPrice'] !== ''
+            && is_numeric($data['regularPrice'])
+        ) {
+            $regularPrice = wc_format_decimal(
+                (string)$data['regularPrice']
+            );
+        }
+
+        /*
+         * Prix promo.
+         */
+        if (
+            array_key_exists('salePrice', $data)
+            && $data['salePrice'] !== null
+            && $data['salePrice'] !== ''
+            && is_numeric($data['salePrice'])
+        ) {
+            $salePrice = wc_format_decimal(
+                (string)$data['salePrice']
+            );
+        }
+
+        /*
+         * Vérification du prix promo.
+         */
+        if (
+            $regularPrice !== null
+            && $salePrice !== null
+            && (float)$salePrice >= (float)$regularPrice
+        ) {
+            throw new RuntimeException(
+                'Le prix promotionnel doit être inférieur au prix normal.'
+            );
+        }
+
+        /*
+         * Mise à jour du prix normal.
+         */
+        if ($regularPrice !== null) {
+            if (
+                $product->get_regular_price()
+                !== $regularPrice
+            ) {
+                $product->set_regular_price(
+                    $regularPrice
+                );
+
+                $changed = true;
+            }
+        }
+
+        /*
+         * Suppression du prix promo.
+         */
+        if (
+            array_key_exists('salePrice', $data)
+            && (
+                $data['salePrice'] === null
+                || $data['salePrice'] === ''
+            )
+        ) {
+            if ($product->get_sale_price() !== '') {
+                $product->set_sale_price('');
+                $changed = true;
+            }
+        }
+
+        /*
+         * Mise à jour du prix promo.
+         */
+        if ($salePrice !== null) {
+            if (
+                $product->get_sale_price()
+                !== $salePrice
+            ) {
+                $product->set_sale_price(
+                    $salePrice
+                );
+
+                $changed = true;
+            }
+        }
+
+        return $changed;
+    }
+
 
     /**
      * Find a product by SKU.

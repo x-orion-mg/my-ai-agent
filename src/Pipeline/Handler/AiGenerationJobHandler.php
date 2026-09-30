@@ -266,37 +266,18 @@ final readonly class AiGenerationJobHandler implements JobHandlerInterface
         );
 
         $data = [
-            'productName' =>
-                $productName,
-
-            'shortDescription' =>
-                $shortDescription,
-
-            'description' =>
-                $description,
-
-            'caracteristiquesTechnique' =>
-                $source['technicalData'] ?? '',
-
-            'sku' =>
-                $job->reference,
-
-            'ean' =>
-                $ean !== ''
-                    ? $ean
-                    : null,
-
-            'brand' =>
-                'Legrand',
-
-            'productType' =>
-                null,
-
-            'category' =>
-                $category,
-
-            'categories' =>
-                $categories,
+            'productName' => $productName,
+            'shortDescription' => $shortDescription,
+            'description' => $description,
+            'caracteristiquesTechnique' => $source['technicalData'] ?? '',
+            'sku' => $job->reference,
+            'ean' => $ean !== '' ? $ean : null,
+            'brand' => 'Legrand',
+            'productType' => null,
+            'category' => $category,
+            'categories' => $categories,
+            'regularPrice' => $row['price'] ?? null,
+            'salePrice' =>$row['promotion_price'] ?? null,
 
             /*
              * Ces informations ne sont pas présentes
