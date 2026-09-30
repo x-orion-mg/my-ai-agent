@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 defined('ABSPATH') || exit;
 
-const MY_AI_AGENT_VERSION = '1.0.0';
+const MY_AI_AGENT_VERSION = '1.1.0';
 const MY_AI_AGENT_DOMAIN = 'my-ai-agent';
 const MY_AI_AGENT_FILE = __FILE__;
 define('MY_AI_AGENT_DIR', plugin_dir_path(__FILE__));

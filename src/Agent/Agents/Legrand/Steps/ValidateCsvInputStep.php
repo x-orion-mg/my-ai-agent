@@ -19,6 +19,12 @@ final class ValidateCsvInputStep implements AgentStepInterface
         'Code famille remise',
         'Nom famille remise',
         'Code EAN',
+        'productName',
+        'shortDescription',
+        'description',
+        'category',
+        'alt',
+        'metaDescription',
         'Prix promotion',
         'Prix',
     ];
@@ -222,6 +228,12 @@ final class ValidateCsvInputStep implements AgentStepInterface
                     $familyCode,
                     $familyName,
                     $ean,
+                    $productName,
+                    $shortDescription,
+                    $description,
+                    $category,
+                    $alt,
+                    $metaDescription,
                     $promotionPrice,
                     $price,
                 ] = $row;
@@ -232,7 +244,7 @@ final class ValidateCsvInputStep implements AgentStepInterface
                 if ($reference === '') {
                     $this->addError(
                         $errors,
-                        "Ligne {$lineNumber} : Reference obligatoire."
+                        "- Ligne {$lineNumber} : Reference obligatoire.<br>"
                     );
                 } elseif (!preg_match(
                     '/^[A-Za-z0-9._-]+$/',

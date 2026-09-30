@@ -160,7 +160,8 @@ final readonly class PipelineService
          */
 
         $sourceHandler = new SourceJobHandler(
-            $legrand
+            $legrand,
+            $rows
         );
 
 

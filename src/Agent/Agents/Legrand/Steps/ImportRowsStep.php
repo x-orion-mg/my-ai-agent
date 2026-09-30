@@ -361,6 +361,12 @@ final readonly class ImportRowsStep implements AgentStepInterface
             'Code famille remise',
             'Nom famille remise',
             'Code EAN',
+            'productName',
+            'shortDescription',
+            'description',
+            'category',
+            'alt',
+            'metaDescription',
             'Prix promotion',
             'Prix',
         ];
@@ -446,18 +452,6 @@ final readonly class ImportRowsStep implements AgentStepInterface
             );
         }
 
-        $promotionPrice = $this->getValue(
-            $row,
-            $headerMap,
-            'Prix promotion'
-        );
-
-        $price = $this->getValue(
-            $row,
-            $headerMap,
-            'Prix'
-        );
-
         return [
             'reference' => $reference,
 
@@ -482,18 +476,66 @@ final readonly class ImportRowsStep implements AgentStepInterface
             'ean' => $this->getValue(
                 $row,
                 $headerMap,
-                'EAN'
+                'Code EAN'
             ) ?: null,
 
-            'promotion_price' =>
-                $this->normalizePrice(
-                    $promotionPrice
-                ),
+            /*
+             * PRIX
+             */
+            'promotion_price' => $this->normalizePrice(
+                $this->getValue(
+                    $row,
+                    $headerMap,
+                    'Prix promotion'
+                )
+            ),
 
-            'price' =>
-                $this->normalizePrice(
-                    $price
-                ),
+            'price' => $this->normalizePrice(
+                $this->getValue(
+                    $row,
+                    $headerMap,
+                    'Prix'
+                )
+            ),
+
+            /*
+             * CONTENU CSV
+             */
+            'product_name' => $this->getValue(
+                $row,
+                $headerMap,
+                'productName'
+            ) ?: null,
+
+            'short_description' => $this->getValue(
+                $row,
+                $headerMap,
+                'shortDescription'
+            ) ?: null,
+
+            'description' => $this->getValue(
+                $row,
+                $headerMap,
+                'description'
+            ) ?: null,
+
+            'category' => $this->getValue(
+                $row,
+                $headerMap,
+                'category'
+            ) ?: null,
+
+            'alt' => $this->getValue(
+                $row,
+                $headerMap,
+                'alt'
+            ) ?: null,
+
+            'meta_description' => $this->getValue(
+                $row,
+                $headerMap,
+                'metaDescription'
+            ) ?: null,
 
             'status' => 'pending',
 

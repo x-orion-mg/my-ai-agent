@@ -30,6 +30,7 @@ use MyAIAgent\Ajax\AjaxController;
 use MyAIAgent\Ajax\AjaxRouter;
 use MyAIAgent\API\ApiKeyController;
 use MyAIAgent\API\ApiKeyRotator;
+use MyAIAgent\Database\Migration;
 use MyAIAgent\Execution\ExecutionManager;
 use MyAIAgent\Logger\Logger;
 use MyAIAgent\Pipeline\Command\PipelineCommand;
@@ -72,7 +73,7 @@ final class Plugin
         }
 
         $this->booted = true;
-
+        Migration::run();
         load_plugin_textdomain(MY_AI_AGENT_DOMAIN, false, dirname(MY_AI_AGENT_DIR) . '/languages');
 
         $this->registerServices();

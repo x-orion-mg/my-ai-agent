@@ -136,6 +136,16 @@ final class Schema
             family_code VARCHAR(100) NULL,
             family_name VARCHAR(255) NULL,
             ean VARCHAR(20) NULL,
+            product_name VARCHAR(255) NULL,
+            short_description TEXT NULL,
+            description LONGTEXT NULL,
+            category TEXT NULL,
+            alt VARCHAR(255) NULL,
+            meta_description TEXT NULL,
+            source_url TEXT NULL,
+            source_image TEXT NULL,
+            source_technical_data LONGTEXT NULL,
+            source_retrieved_at DATETIME NULL,
             promotion_price DECIMAL(12,2) NULL,
             price DECIMAL(12,2) NULL,
             status VARCHAR(50) NOT NULL DEFAULT 'pending',
@@ -146,7 +156,7 @@ final class Schema
             UNIQUE KEY reference (reference),
             KEY import_id (import_id),
             KEY ean (ean),
-    
+            KEY source_retrieved_at (source_retrieved_at),
             CONSTRAINT fk_import_rows_import
                 FOREIGN KEY (import_id)
                 REFERENCES " . ImportRepository::tableName() . "(id)
