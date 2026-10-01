@@ -24,6 +24,9 @@ final class LegrandUrl
 
     public const string LEGRAND_ECAT = 'https://www.legrand.com/ecatalogue/en';
 
+    public const string LEGRAND_SCRAPPING = "https://recette-shop.lumina.mg/api/scrape";
+    public const string LEGRAND_SCRAPPING_SEARCH = "https://recette-shop.lumina.mg/api/scrape/product-url";
+
     public function __construct(
         private readonly LegrandHttpClient $http
     )

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MyAIAgent\Services\Legrand\Client;
 
 use  MyAIAgent\Services\Legrand\Exception\LegrandHttpException;
+use MyAIAgent\Services\Legrand\Product\LegrandProduct;
+use MyAIAgent\Services\Legrand\Support\LegrandUrl;
 
 final class LegrandHttpClient
 {
@@ -206,5 +208,163 @@ final class LegrandHttpClient
 
 
         return $html;
+    }
+
+    function legrandScrap(string $url, string $reference): LegrandProduct
+    {
+        $endpoint = LegrandUrl::LEGRAND_SCRAPPING;
+
+        $payload = [
+            'url' => $url
+        ];
+
+        $ch = curl_init($endpoint);
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+
+            CURLOPT_POSTFIELDS => json_encode($payload),
+
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ],
+
+            CURLOPT_RETURNTRANSFER => true,
+
+            // Temps maximum pour établir la connexion
+            CURLOPT_CONNECTTIMEOUT => 10,
+
+            // Le scraping peut prendre du temps
+            CURLOPT_TIMEOUT => 120,
+
+            // Pour avoir les erreurs HTTP
+            CURLOPT_FAILONERROR => false
+        ]);
+
+        $response = curl_exec($ch);
+
+        // Erreur cURL
+        if ($response === false) {
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            throw new LegrandHttpException(
+                'Erreur cURL : ' . $error
+            );
+        }
+
+        // Code HTTP
+        $httpCode = curl_getinfo(
+            $ch,
+            CURLINFO_HTTP_CODE
+        );
+
+        curl_close($ch);
+
+        // Décodage JSON
+        $data = json_decode(
+            $response,
+            true
+        );
+
+        if (!is_array($data)) {
+            throw new LegrandHttpException(
+                'Réponse invalide de Next.js : ' .
+                $response
+            );
+        }
+
+        // Erreur retournée par Next.js
+        if (($data['success'] ?? false) !== true) {
+            throw new LegrandHttpException(
+                'Erreur scraper : ' .
+                ($data['error'] ?? 'Erreur inconnue')
+            );
+        }
+
+        return new LegrandProduct(
+            reference: $reference,
+            url:$url,
+            image: $data['imageUrl'] ?? null,
+            technicalData: $data['characteristicsHtml'] ?? null
+        );
+    }
+    function legrandScrapSearchProduct(string $reference): ?string
+    {
+        $endpoint = LegrandUrl::LEGRAND_SCRAPPING_SEARCH;
+
+        $payload = [
+            'reference' => $reference
+        ];
+
+        $ch = curl_init($endpoint);
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+
+            CURLOPT_POSTFIELDS => json_encode($payload),
+
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ],
+
+            CURLOPT_RETURNTRANSFER => true,
+
+            // Temps maximum pour établir la connexion
+            CURLOPT_CONNECTTIMEOUT => 10,
+
+            // Le scraping peut prendre du temps
+            CURLOPT_TIMEOUT => 120,
+
+            // Pour avoir les erreurs HTTP
+            CURLOPT_FAILONERROR => false
+        ]);
+
+        $response = curl_exec($ch);
+
+        // Erreur cURL
+        if ($response === false) {
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            throw new LegrandHttpException(
+                'Erreur cURL : ' . $error
+            );
+        }
+
+        // Code HTTP
+        $httpCode = curl_getinfo(
+            $ch,
+            CURLINFO_HTTP_CODE
+        );
+
+        curl_close($ch);
+
+        // Décodage JSON
+        $data = json_decode(
+            $response,
+            true
+        );
+
+        if (!is_array($data)) {
+            throw new LegrandHttpException(
+                'Réponse invalide de Next.js : ' .
+                $response
+            );
+        }
+
+        // Erreur retournée par Next.js
+        if (($data['success'] ?? false) !== true) {
+            throw new LegrandHttpException(
+                'Erreur scraper : ' .
+                ($data['error'] ?? 'Erreur inconnue')
+            );
+        }
+
+        return $data['productUrl'] ?? null;
     }
 }

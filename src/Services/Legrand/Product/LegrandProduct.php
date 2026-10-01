@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace MyAIAgent\Services\Legrand\Product;
 
-final class LegrandProduct
+final readonly class LegrandProduct
 {
     /**
      * @param array<string, string> $technicalData
      */
     public function __construct(
-        public readonly string $reference,
-        public readonly ?string $url,
-        public readonly ?string $image,
-        public readonly ?string $technicalData ,
+        public string  $reference,
+        public ?string $url,
+        public ?string $image,
+        public ?string $technicalData ,
     ) {
     }
 
