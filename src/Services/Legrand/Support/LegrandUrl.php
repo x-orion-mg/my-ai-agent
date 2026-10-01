@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use MyAIAgent\Services\Legrand\Client\LegrandHttpClient;
+use MyAIAgent\Services\Legrand\Exception\ProductNotFoundException;
 
 final class LegrandUrl
 {
@@ -63,7 +64,9 @@ final class LegrandUrl
     public function findLegrandProductPage(string $reference): ?string
     {
         if ($reference === '') {
-            return null;
+            throw new ProductNotFoundException(
+                'Impossible de trouver la page produit Legrand pour une référence vide.'
+            );
         }
 
         /*
@@ -76,11 +79,15 @@ final class LegrandUrl
         try {
             $html = $this->http->getEn($searchUrl);
         } catch (\Throwable) {
-            return null;
+            throw new ProductNotFoundException(
+                'Erreur lors de la récupération de la page produit Legrand.'
+            );
         }
 
         if ($html === '') {
-            return null;
+            throw new ProductNotFoundException(
+                'Aucun résultat trouvé pour la référence : ' . $reference
+            );
         }
 
 
@@ -257,7 +264,9 @@ final class LegrandUrl
 
 
         if ($url === '') {
-            return '';
+            throw new ProductNotFoundException(
+                'Impossible de trouver la page produit Legrand pour une URL vide.'
+            );
         }
 
 

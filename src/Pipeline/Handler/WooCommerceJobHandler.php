@@ -8,6 +8,7 @@ use MyAIAgent\Pipeline\Contract\JobHandlerInterface;
 use MyAIAgent\Pipeline\DTO\ProductJob;
 use MyAIAgent\Pipeline\Exception\PermanentJobException;
 use MyAIAgent\Pipeline\Exception\RetryableJobException;
+use MyAIAgent\Services\Legrand\Repository\ImportRowRepository;
 use MyAIAgent\Services\Product\ProductService;
 use Throwable;
 
@@ -15,6 +16,7 @@ final class WooCommerceJobHandler implements JobHandlerInterface
 {
     public function __construct(
         private readonly ProductService $productService,
+        private readonly ImportRowRepository $importRows,
     ) {
     }
 
@@ -100,7 +102,21 @@ final class WooCommerceJobHandler implements JobHandlerInterface
                 'WooCommerce n’a pas retourné un identifiant valide.'
             );
         }
+        $updated = $this->importRows->updateStatus(
+            $job->reference,
+            ImportRowRepository::STATUS_COMPLETED
+        );
 
+        if (!$updated) {
+            error_log(
+                sprintf(
+                    '[MY-AI-AGENT] Produit WooCommerce créé (%d), '
+                    . 'mais impossible de mettre import_rows #%d à completed.',
+                    $productId,
+                    $job->reference
+                )
+            );
+        }
         return [
             'woocommerce' => [
                 'product_id' => $productId,

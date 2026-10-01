@@ -8,6 +8,13 @@ use MyAIAgent\Services\Legrand\ImportRow\ImportRowSaveResult;
 
 final class ImportRowRepository extends AbstractRepository
 {
+    public const string STATUS_PENDING = 'pending';
+
+    public const string STATUS_PROCESSING = 'processing';
+
+    public const string STATUS_COMPLETED = 'completed';
+
+    public const string STATUS_FAILED = 'failed';
     protected static function tableSuffix(): string
     {
         return 'import_rows';
@@ -391,5 +398,28 @@ final class ImportRowRepository extends AbstractRepository
         return $value === ''
             ? null
             : $value;
+    }
+
+    public function updateStatus(
+        string  $reference,
+        string $status
+    ): bool {
+        return $this->wpdb->update(
+                self::tableName(),
+                [
+                    'status' => $status,
+                    'updated_at' => current_time('mysql'),
+                ],
+                [
+                    'reference' => $reference,
+                ],
+                [
+                    '%s',
+                    '%s',
+                ],
+                [
+                    '%s',
+                ]
+            ) !== false;
     }
 }

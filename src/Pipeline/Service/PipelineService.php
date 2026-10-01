@@ -197,7 +197,8 @@ final readonly class PipelineService
          */
 
         $woocommerceHandler = new WooCommerceJobHandler(
-            $productService
+            $productService,
+            $rows
         );
 
 

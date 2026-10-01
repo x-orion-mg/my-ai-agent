@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MyAIAgent\Services\Legrand\Product;
 
 use  MyAIAgent\Services\Legrand\Client\LegrandHttpClient;
+use MyAIAgent\Services\Legrand\Exception\ProductNotFoundException;
 use  MyAIAgent\Services\Legrand\Extractor\ProductImageExtractor;
 use  MyAIAgent\Services\Legrand\Extractor\ProductTechnicalDataExtractor;
 use  MyAIAgent\Services\Legrand\Extractor\ProductUrlExtractor;
@@ -41,7 +42,9 @@ final class LegrandProductService
         $url = $this->urlExtractor->find($reference);
 
         if ($url === null) {
-            return null;
+            return throw new ProductNotFoundException(
+                'Impossible de trouver la page produit Legrand pour une référence vide.'
+            );
         }
 
         /*
@@ -50,6 +53,12 @@ final class LegrandProductService
          * ======================================================
          */
         $url_en = $this->legrandUrl->findLegrandProductPage($reference);
+
+        if ($url_en === null) {
+            return throw new ProductNotFoundException(
+                'Impossible de trouver la page produit Legrand pour une référence vide.'
+            );
+        }
         $html = $this->http->getEn($url_en);
 
         /*

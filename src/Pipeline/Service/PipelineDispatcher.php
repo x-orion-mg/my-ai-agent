@@ -23,55 +23,134 @@ final class PipelineDispatcher
      *
      * The CSV is never read here.
      */
-    public function dispatchImport(int $importId, int $batchSize = 50): int
-    {
+    public function dispatchImport(
+        int $importId,
+        int $batchSize = 50
+    ): int {
         $import = $this->imports->find($importId);
 
         if ($import === null) {
             throw new \InvalidArgumentException(
-                sprintf('Import #%d introuvable.', $importId)
+                sprintf(
+                    'Import #%d introuvable.',
+                    $importId
+                )
             );
         }
 
-        $batchSize = max(1, min(500, $batchSize));
-        $wpdb = $this->db();
+        /*
+         * Limite de sécurité :
+         *
+         * minimum : 1
+         * maximum : 500
+         */
+        $batchSize = max(
+            1,
+            min(500, $batchSize)
+        );
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                'SELECT *
-                 FROM ' . ImportRowRepository::tableName() . '
-                 WHERE import_id = %d
-                   AND status IN ("pending", "processing")
-                 ORDER BY id ASC
-                 LIMIT %d',
-                $importId,
-                $batchSize
-            ),
-            ARRAY_A
-        ) ?: [];
+        $wpdb = $this->db();
 
         $count = 0;
 
-        foreach ($rows as $row) {
-            $rowId = (int) ($row['id'] ?? 0);
-            $reference = trim((string) ($row['reference'] ?? ''));
+        /*
+         * On traite les lignes par batch jusqu'à ce qu'il
+         * n'y ait plus aucune ligne à dispatcher.
+         */
+        while (true) {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    'SELECT *
+                 FROM ' . ImportRowRepository::tableName() . '
+                 WHERE import_id = %d
+                   AND status = %s
+                 ORDER BY id ASC
+                 LIMIT %d',
+                    $importId,
+                    'pending',
+                    $batchSize
+                ),
+                ARRAY_A
+            ) ?: [];
 
-            if ($rowId <= 0 || $reference === '') {
-                continue;
+            /*
+             * Plus aucune ligne à traiter.
+             */
+            if ($rows === []) {
+                break;
             }
 
-            $jobId = $this->jobs->create(
-                $rowId,
-                $reference,
-                ProductJobType::SOURCE,
-                [
-                    'import_row' => $row,
-                ]
-            );
+            foreach ($rows as $row) {
+                $rowId = (int)($row['id'] ?? 0);
+                $reference = trim(
+                    (string)($row['reference'] ?? '')
+                );
 
-            if ($jobId > 0) {
-                $this->scheduler->schedule($jobId);
+                /*
+                 * Ligne invalide.
+                 */
+                if (
+                    $rowId <= 0
+                    || $reference === ''
+                ) {
+                    continue;
+                }
+
+                /*
+                 * On crée le job.
+                 */
+                $jobId = $this->jobs->create(
+                    $rowId,
+                    $reference,
+                    ProductJobType::SOURCE,
+                    [
+                        'import_row' => $row,
+                    ]
+                );
+
+                if ($jobId <= 0) {
+                    continue;
+                }
+
+                /*
+                 * On programme le job.
+                 */
+                $this->scheduler->schedule(
+                    $jobId
+                );
+
+                /*
+                 * Très important :
+                 * la ligne ne doit plus être sélectionnée
+                 * au prochain batch.
+                 */
+                $wpdb->update(
+                    ImportRowRepository::tableName(),
+                    [
+                        'status' => 'processing',
+                    ],
+                    [
+                        'id' => $rowId,
+                    ],
+                    [
+                        '%s',
+                    ],
+                    [
+                        '%d',
+                    ]
+                );
+
                 ++$count;
+            }
+
+            /*
+             * Sécurité supplémentaire :
+             *
+             * Si aucun job n'a été créé dans ce batch,
+             * on arrête pour éviter une boucle infinie.
+             */
+            if ($count === 0) {
+                break;
             }
         }
 
