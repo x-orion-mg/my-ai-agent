@@ -125,6 +125,39 @@ final class ProductService
         );
 
         /*
+         * Stock.
+         */
+        if (
+            array_key_exists('stock', $data)
+            && $data['stock'] !== null
+            && $data['stock'] !== ''
+        ) {
+            $stock = $data['stock'];
+
+            if (
+                !is_numeric($stock)
+                || (int)$stock < 0
+            ) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Le stock "%s" du produit est invalide.',
+                        (string)$stock
+                    )
+                );
+            }
+
+            $stock = (int)$stock;
+
+            $product->set_manage_stock(true);
+            $product->set_stock_quantity($stock);
+            $product->set_stock_status(
+                $stock > 0
+                    ? 'instock'
+                    : 'outofstock'
+            );
+        }
+
+        /*
  * Prix normal.
  */
         if (
@@ -207,6 +240,20 @@ final class ProductService
         if ($this->updateProductPrices($product, $data)) {
             $changed = true;
         }
+
+        /*
+         * Stock.
+         */
+        if (
+            array_key_exists('stock', $data)
+            && $this->updateStock(
+                $product,
+                $data['stock']
+            )
+        ) {
+            $changed = true;
+        }
+
         /*
          * Nom.
          */
@@ -1735,4 +1782,77 @@ final class ProductService
 
         return true;
     }
+
+    /**
+     * Update WooCommerce product stock.
+     *
+     * @param WC_Product $product
+     * @param mixed $stock
+     *
+     * @return bool True when the stock has changed.
+     *
+     * @throws RuntimeException When the stock value is invalid.
+     */
+    private function updateStock(
+        WC_Product $product,
+        mixed $stock
+    ): bool {
+        if (
+            $stock === null
+            || $stock === ''
+        ) {
+            return false;
+        }
+
+        if (
+            !is_numeric($stock)
+            || (int)$stock < 0
+        ) {
+            throw new RuntimeException(
+                sprintf(
+                    'Le stock "%s" du produit #%d est invalide.',
+                    (string)$stock,
+                    $product->get_id()
+                )
+            );
+        }
+
+        $newStock = (int)$stock;
+
+        $currentStock = $product->get_stock_quantity();
+        $manageStock = $product->get_manage_stock();
+
+        $changed = false;
+
+        /*
+         * Active la gestion du stock.
+         */
+        if (!$manageStock) {
+            $product->set_manage_stock(true);
+            $changed = true;
+        }
+
+        /*
+         * Mise à jour de la quantité.
+         */
+        if ($currentStock !== $newStock) {
+            $product->set_stock_quantity($newStock);
+            $changed = true;
+        }
+
+        /*
+         * Mise à jour du statut.
+         */
+        $newStockStatus = $newStock > 0
+            ? 'instock'
+            : 'outofstock';
+
+        if ($product->get_stock_status() !== $newStockStatus) {
+            $product->set_stock_status($newStockStatus);
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
 }

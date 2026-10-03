@@ -28,13 +28,10 @@
                 </p>
 
                 <code>
-                    Reference,
-                    Libelle produit (fr),
-                    Code famille remise,
-                    Nom famille remise,
-                    Code EAN,
-                    Prix promotion,
-                    Prix
+                    Reference; Libelle produit (fr); Code famille remise; Nom famille remise ;
+                    Code EAN ;TYPE; FONCTION; FINITION; GAMME; Famille; Sous-famille; stock;
+                    Prix; productName; shortDescription; description; category; alt;
+                    metaDescription; Prix promotion
                 </code>
             </div>
         </div>

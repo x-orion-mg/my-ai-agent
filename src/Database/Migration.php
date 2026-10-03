@@ -1,35 +1,37 @@
 <?php
 
-
 declare(strict_types=1);
 
 namespace MyAIAgent\Database;
 
 final class Migration
 {
-    private const string VERSION = '1.1.0';
-
     public static function run(): void
     {
-        $currentVersion = (string)get_option(
+        $currentVersion = (string) get_option(
             'my_ai_agent_db_version',
             '1.0.0'
         );
 
-        if (version_compare(
-            $currentVersion,
-            self::VERSION,
-            '>='
-        )) {
-            return;
+        $migrations = [
+            '1.1.0' => self::migrateTo110(...),
+            '1.2.0' => self::migrateTo120(...),
+        ];
+
+        foreach ($migrations as $version => $migration) {
+            if (version_compare($currentVersion, $version, '>=')) {
+                continue;
+            }
+
+            $migration();
+
+            update_option(
+                'my_ai_agent_db_version',
+                $version
+            );
+
+            $currentVersion = $version;
         }
-
-        self::migrateTo110();
-
-        update_option(
-            'my_ai_agent_db_version',
-            self::VERSION
-        );
     }
 
     private static function migrateTo110(): void
@@ -38,74 +40,136 @@ final class Migration
 
         $table = $wpdb->prefix . 'my_ai_agent_legrand_import_rows';
 
-        $columns = [
-            'product_name' => "
-                ADD COLUMN product_name VARCHAR(255) NULL
-                AFTER ean
-            ",
+        self::addColumn(
+            $table,
+            'product_name',
+            'VARCHAR(255) NULL AFTER ean'
+        );
 
-            'short_description' => "
-                ADD COLUMN short_description TEXT NULL
-                AFTER product_name
-            ",
+        self::addColumn(
+            $table,
+            'short_description',
+            'TEXT NULL AFTER product_name'
+        );
 
-            'description' => "
-                ADD COLUMN description LONGTEXT NULL
-                AFTER short_description
-            ",
+        self::addColumn(
+            $table,
+            'description',
+            'LONGTEXT NULL AFTER short_description'
+        );
 
-            'category' => "
-                ADD COLUMN category TEXT NULL
-                AFTER description
-            ",
+        self::addColumn(
+            $table,
+            'category',
+            'TEXT NULL AFTER description'
+        );
 
-            'alt' => "
-                ADD COLUMN alt VARCHAR(255) NULL
-                AFTER category
-            ",
+        self::addColumn(
+            $table,
+            'alt',
+            'VARCHAR(255) NULL AFTER category'
+        );
 
-            'meta_description' => "
-                ADD COLUMN meta_description TEXT NULL
-                AFTER alt
-            ",
+        self::addColumn(
+            $table,
+            'meta_description',
+            'TEXT NULL AFTER alt'
+        );
 
-            'source_url' => "
-                ADD COLUMN source_url TEXT NULL
-                AFTER meta_description
-            ",
+        self::addColumn(
+            $table,
+            'source_url',
+            'TEXT NULL AFTER meta_description'
+        );
 
-            'source_image' => "
-                ADD COLUMN source_image TEXT NULL
-                AFTER source_url
-            ",
+        self::addColumn(
+            $table,
+            'source_image',
+            'TEXT NULL AFTER source_url'
+        );
 
-            'source_technical_data' => "
-                ADD COLUMN source_technical_data LONGTEXT NULL
-                AFTER source_image
-            ",
+        self::addColumn(
+            $table,
+            'source_technical_data',
+            'LONGTEXT NULL AFTER source_image'
+        );
 
-            'source_retrieved_at' => "
-                ADD COLUMN source_retrieved_at DATETIME NULL
-                AFTER source_technical_data
-            ",
-        ];
+        self::addColumn(
+            $table,
+            'source_retrieved_at',
+            'DATETIME NULL AFTER source_technical_data'
+        );
+    }
 
-        foreach ($columns as $column => $sql) {
-            if (self::columnExists($table, $column)) {
-                continue;
-            }
+    private static function migrateTo120(): void
+    {
+        global $wpdb;
 
-            $wpdb->query(
-                "ALTER TABLE {$table} {$sql}"
-            );
+        $table = $wpdb->prefix . 'my_ai_agent_legrand_import_rows';
+
+        self::addColumn(
+            $table,
+            'type',
+            'VARCHAR(255) NULL AFTER ean'
+        );
+
+        self::addColumn(
+            $table,
+            'fonction',
+            'VARCHAR(255) NULL AFTER type'
+        );
+
+        self::addColumn(
+            $table,
+            'finition',
+            'VARCHAR(255) NULL AFTER fonction'
+        );
+
+        self::addColumn(
+            $table,
+            'gamme',
+            'VARCHAR(255) NULL AFTER finition'
+        );
+
+        self::addColumn(
+            $table,
+            'famille',
+            'VARCHAR(255) NULL AFTER gamme'
+        );
+
+        self::addColumn(
+            $table,
+            'sous_famille',
+            'VARCHAR(255) NULL AFTER famille'
+        );
+
+        self::addColumn(
+            $table,
+            'stock',
+            'INT NULL AFTER sous_famille'
+        );
+    }
+
+    private static function addColumn(
+        string $table,
+        string $column,
+        string $definition
+    ): void {
+        global $wpdb;
+
+        if (self::columnExists($table, $column)) {
+            return;
         }
+
+        $wpdb->query(
+            "ALTER TABLE {$table} ADD COLUMN {$column} {$definition}"
+        );
     }
 
     private static function columnExists(
         string $table,
         string $column
-    ): bool
-    {
+    ): bool {
         global $wpdb;
 
         $result = $wpdb->get_var(

@@ -207,6 +207,27 @@ final class ImportRowRepository extends AbstractRepository
                 'ean' =>
                     $data['ean'] ?? null,
 
+                'type' =>
+                    $data['type'] ?? null,
+
+                'fonction' =>
+                    $data['fonction'] ?? null,
+
+                'finition' =>
+                    $data['finition'] ?? null,
+
+                'gamme' =>
+                    $data['gamme'] ?? null,
+
+                'famille' =>
+                    $data['famille'] ?? null,
+
+                'sous_famille' =>
+                    $data['sous_famille'] ?? null,
+
+                'stock' =>
+                    $data['stock'] ?? null,
+
                 'product_name' =>
                     $data['product_name'] ?? null,
 
@@ -242,24 +263,37 @@ final class ImportRowRepository extends AbstractRepository
                 'updated_at' => $now,
             ],
             [
-                '%d',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
-                '%f',
-                '%f',
-                '%s',
-                '%s',
-                '%s',
-                '%s',
+                '%d', // import_id
+
+                '%s', // reference
+                '%s', // label
+                '%s', // family_code
+                '%s', // family_name
+                '%s', // ean
+
+                '%s', // type
+                '%s', // fonction
+                '%s', // finition
+                '%s', // gamme
+                '%s', // famille
+                '%s', // sous_famille
+                '%d', // stock
+
+                '%s', // product_name
+                '%s', // short_description
+                '%s', // description
+                '%s', // category
+                '%s', // alt
+                '%s', // meta_description
+
+                '%f', // promotion_price
+                '%f', // price
+
+                '%s', // status
+                '%s', // error
+
+                '%s', // created_at
+                '%s', // updated_at
             ]
         );
 
@@ -299,6 +333,27 @@ final class ImportRowRepository extends AbstractRepository
 
                     'ean' =>
                         $data['ean'] ?? null,
+
+                    'type' =>
+                        $data['type'] ?? null,
+
+                    'fonction' =>
+                        $data['fonction'] ?? null,
+
+                    'finition' =>
+                        $data['finition'] ?? null,
+
+                    'gamme' =>
+                        $data['gamme'] ?? null,
+
+                    'famille' =>
+                        $data['famille'] ?? null,
+
+                    'sous_famille' =>
+                        $data['sous_famille'] ?? null,
+
+                    'stock' =>
+                        $data['stock'] ?? null,
 
                     'product_name' =>
                         $data['product_name'] ?? null,
@@ -345,26 +400,36 @@ final class ImportRowRepository extends AbstractRepository
                     'id' => $id,
                 ],
                 [
-                    '%d',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%f',
-                    '%f',
-                    '%s',
-                    '%s',
-                    '%s',
+                    '%d', // import_id
+                    '%s', // reference
+                    '%s', // label
+                    '%s', // family_code
+                    '%s', // family_name
+                    '%s', // ean
+
+                    '%s', // type
+                    '%s', // fonction
+                    '%s', // finition
+                    '%s', // gamme
+                    '%s', // famille
+                    '%s', // sous_famille
+                    '%d', // stock
+
+                    '%s', // product_name
+                    '%s', // short_description
+                    '%s', // description
+                    '%s', // category
+                    '%s', // alt
+                    '%s', // meta_description
+
+                    '%f', // promotion_price
+                    '%f', // price
+                    '%s', // status
+                    '%s', // error
+                    '%s', // updated_at
                 ],
                 [
-                    '%d',
+                    '%d', // id
                 ]
             ) !== false;
     }

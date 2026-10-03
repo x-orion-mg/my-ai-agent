@@ -19,14 +19,21 @@ final class ValidateCsvInputStep implements AgentStepInterface
         'Code famille remise',
         'Nom famille remise',
         'Code EAN',
+        'TYPE',
+        'FONCTION',
+        'FINITION',
+        'GAMME',
+        'Famille',
+        'Sous-famille',
+        'stock',
+        'Prix',
         'productName',
         'shortDescription',
         'description',
         'category',
         'alt',
         'metaDescription',
-        'Prix promotion',
-        'Prix',
+        'Prix promotion'
     ];
     private const int MAX_ERRORS = 100;
 
@@ -221,13 +228,26 @@ final class ValidateCsvInputStep implements AgentStepInterface
                 }
 
                 $row = $this->normalizeRow($row);
-
+/*
+ * Reference; Libelle produit (fr); Code famille remise;
+ * Nom famille remise ; Code EAN ;TYPE; FONCTION; FINITION;
+ * GAMME; Famille; Sous-famille; stock; Prix; productName; shortDescription;
+ * description; category; alt; metaDescription; Prix promotion
+ */
                 [
                     $reference,
                     $label,
                     $familyCode,
                     $familyName,
                     $ean,
+                    $type,
+                    $fonction,
+                    $finition,
+                    $gamme,
+                    $famille,
+                    $sousFamille,
+                    $stock,
+                    $price,
                     $productName,
                     $shortDescription,
                     $description,
@@ -235,7 +255,6 @@ final class ValidateCsvInputStep implements AgentStepInterface
                     $alt,
                     $metaDescription,
                     $promotionPrice,
-                    $price,
                 ] = $row;
 
                 /*
@@ -281,7 +300,7 @@ final class ValidateCsvInputStep implements AgentStepInterface
                         $errors,
                         "Ligne {$lineNumber} : Code famille remise obligatoire."
                     );
-                } elseif (!preg_match('/^\d+$/', $familyCode)) {
+                } elseif (!preg_match('/^[a-zA-Z0-9]+$/', $familyCode)) {
                     $this->addError(
                         $errors,
                         "Ligne {$lineNumber} : Code famille remise invalide."

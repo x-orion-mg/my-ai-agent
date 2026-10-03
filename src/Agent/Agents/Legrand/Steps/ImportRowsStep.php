@@ -361,14 +361,21 @@ final readonly class ImportRowsStep implements AgentStepInterface
             'Code famille remise',
             'Nom famille remise',
             'Code EAN',
+            'TYPE',
+            'FONCTION',
+            'FINITION',
+            'GAMME',
+            'Famille',
+            'Sous-famille',
+            'stock',
+            'Prix',
             'productName',
             'shortDescription',
             'description',
             'category',
             'alt',
             'metaDescription',
-            'Prix promotion',
-            'Prix',
+            'Prix promotion'
         ];
 
         foreach ($requiredHeaders as $header) {
@@ -478,6 +485,41 @@ final readonly class ImportRowsStep implements AgentStepInterface
                 $headerMap,
                 'Code EAN'
             ) ?: null,
+            'type' => $this->getValue(
+                $row,
+                $headerMap,
+                'TYPE'
+            ),
+            'fonction' => $this->getValue(
+                $row,
+                $headerMap,
+                'FONCTION'
+            ),
+            'finition' => $this->getValue(
+                $row,
+                $headerMap,
+                'FINITION'
+            ),
+            'gamme' => $this->getValue(
+                $row,
+                $headerMap,
+                'GAMME'
+            ),
+            'famille' => $this->getValue(
+                $row,
+                $headerMap,
+                'Famille'
+            ),
+            'sous_famille' => $this->getValue(
+                $row,
+                $headerMap,
+                'Sous-famille'
+            ),
+            'stock' => $this->getValue(
+                $row,
+                $headerMap,
+                'stock'
+            ),
 
             /*
              * PRIX
