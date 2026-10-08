@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MyAIAgent\Services\Legrand\Client;
 
 use  MyAIAgent\Services\Legrand\Exception\LegrandHttpException;
+use MyAIAgent\Services\Legrand\Exception\SpiderHttpException;
 use MyAIAgent\Services\Legrand\Product\LegrandProduct;
 use MyAIAgent\Services\Legrand\Support\LegrandUrl;
 
@@ -291,7 +292,7 @@ final class LegrandHttpClient
             technicalData: $data['characteristicsHtml'] ?? null
         );
     }
-    function legrandScrapSearchProduct(string $reference): ?string
+    /*function legrandScrapSearchProduct(string $reference): ?string
     {
         $endpoint = LegrandUrl::LEGRAND_SCRAPPING_SEARCH;
 
@@ -366,5 +367,113 @@ final class LegrandHttpClient
         }
 
         return $data['productUrl'] ?? null;
+    }*/
+
+    function legrandScrapSearchProduct(string $reference): ?string
+    {
+
+        $url = 'https://www.legrand.fr/services/suggest?' . http_build_query([
+                's' => $reference,
+                'fail' => 'false',
+            ]);
+
+        $ch = curl_init($url);
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Accept: */*',
+                'X-Requested-With: XMLHttpRequest',
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        if ($response === false) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+
+        $href = $data['datas']['suggestPro']['elements'][0]['href'] ?? null;
+
+        if (!$href) {
+            return null;
+        }
+
+        return 'https://www.legrand.fr' . $href;
     }
+
+    public function spiderGetArticle(
+        string $reference
+    ): ?array {
+        $url = LegrandUrl::SPIDER_BASE_URL
+            . '/group/customer/articles?'
+            . http_build_query([
+                'page' => 1,
+                'per_page' => 9,
+                'term' => $reference,
+            ]);
+
+        $ch = curl_init($url);
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 20,
+
+            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+            CURLOPT_USERPWD =>  'GroupKey : 8iS4BIPtkCBvq00yDW153F8SQ3Z7CzKKimyB9Wejadvw0ASbWyahkvd9GfPztarv' ,
+
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            throw new SpiderHttpException(
+                'Erreur cURL Spider : ' . $error
+            );
+        }
+
+        $httpCode = curl_getinfo(
+            $ch,
+            CURLINFO_HTTP_CODE
+        );
+
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            throw new SpiderHttpException(
+                'Erreur HTTP Spider : ' . $httpCode
+            );
+        }
+
+        $data = json_decode($response, true);
+
+        if (!is_array($data)) {
+            throw new SpiderHttpException(
+                'Réponse JSON Spider invalide.'
+            );
+        }
+
+        $articles = $data['data']['articles'] ?? null;
+
+        if (!is_array($articles) || empty($articles)) {
+            return null;
+        }
+
+        return $articles[0];
+    }
+
 }

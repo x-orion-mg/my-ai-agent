@@ -294,7 +294,7 @@ final class ValidateCsvInputStep implements AgentStepInterface
 
                 /*
                  * Famille
-                 */
+                 *
                 if ($familyCode === '') {
                     $this->addError(
                         $errors,
@@ -312,7 +312,7 @@ final class ValidateCsvInputStep implements AgentStepInterface
                         $errors,
                         "Ligne {$lineNumber} : Nom famille remise obligatoire."
                     );
-                }
+                }*/
 
                 /*
                  * EAN

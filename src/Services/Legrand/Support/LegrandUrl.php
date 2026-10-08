@@ -26,6 +26,7 @@ final class LegrandUrl
 
     public const string LEGRAND_SCRAPPING = "http://localhost:3000/api/scrape/product";
     public const string LEGRAND_SCRAPPING_SEARCH = "http://localhost:3000/api/scrape/product-url";
+    public const string SPIDER_BASE_URL = 'https://backoffice.spider.mg';
 
     public function __construct(
         private readonly LegrandHttpClient $http

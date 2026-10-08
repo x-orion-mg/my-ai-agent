@@ -21,6 +21,7 @@ use MyAIAgent\Services\Legrand\Extractor\ProductUrlExtractor;
 use MyAIAgent\Services\Legrand\Product\LegrandProductService;
 use MyAIAgent\Services\Legrand\Repository\ImportRepository;
 use MyAIAgent\Services\Legrand\Repository\ImportRowRepository;
+use MyAIAgent\Services\Legrand\Support\LegrandReference;
 use MyAIAgent\Services\Legrand\Support\LegrandUrl;
 use MyAIAgent\Services\Product\ProductService;
 use MyAIAgent\Services\Settings;
@@ -131,25 +132,11 @@ final readonly class PipelineService
          */
 
         $legrandHttp = new LegrandHttpClient();
-
-        $urlExtractor = new ProductUrlExtractor(
-            $legrandHttp
-        );
-
-        $imageExtractor = new ProductImageExtractor();
-
-        $technicalDataExtractor = new ProductTechnicalDataExtractor();
-
-        $legrandUrl = new LegrandUrl(
-            $legrandHttp
-        );
+        $legrandSupport = new LegrandReference();
 
         $legrand = new LegrandProductService(
-            $legrandHttp,
-            $urlExtractor,
-            $imageExtractor,
-            $technicalDataExtractor,
-            $legrandUrl
+            http: $legrandHttp,
+            support: $legrandSupport
         );
 
 
