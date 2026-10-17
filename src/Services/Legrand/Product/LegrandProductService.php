@@ -20,9 +20,9 @@ final class LegrandProductService
     public function getProduct(
         string $reference
     ): ?LegrandProduct {
-        $reference = $this->support->normalize(
+        /*$reference = $this->support->normalize(
             $reference
-        );
+        );*/
 
         if ($reference === '') {
             return null;
